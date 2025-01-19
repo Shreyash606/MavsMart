@@ -1,13 +1,41 @@
-// src/components/ItemCard.js
-import React from 'react';
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
-const ItemCard = ({ item }) => {
+const ItemCard = ({ image, title, description, onBuy, sellerInfo, isLoggedIn }) => {
+  const navigate = useNavigate();
+
+  const handleContactSeller = () => {
+    // Add logic to contact the seller (e.g., show seller details or open a contact form)
+    alert(`Contacting ${sellerInfo.name}...`);
+  };
+
+  const handleBuy = () => {
+    if (isLoggedIn) {
+      onBuy();
+    } else {
+      navigate("/login");
+    }
+  };
+
   return (
-    <div className="border border-gray-300 rounded-md p-4">
-      <img src={item.image} alt={item.name} className="w-full h-40 object-cover rounded-md"/>
-      <h3 className="mt-2 font-semibold">{item.name}</h3>
-      <p>{item.description}</p>
-      <p className="font-bold text-blue-600">{`$${item.price}`}</p>
+    <div className="border p-4 rounded-md shadow-sm">
+      <img src={image} alt={title} className="mb-2 rounded" />
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <p className="text-sm text-gray-500">{description}</p>
+      <button
+        onClick={handleBuy}
+        className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500"
+      >
+        Buy
+      </button>
+      {isLoggedIn && (
+        <button
+          onClick={handleContactSeller}
+          className="mt-2 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+        >
+          Contact Seller
+        </button>
+      )}
     </div>
   );
 };

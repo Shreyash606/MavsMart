@@ -1,16 +1,18 @@
-// src/App.js
 import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Header from "./components/header";
-import HomePage from "./pages/HomePage";
-import LoginPage from "./components/LoginPage";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import LandingPage from "./pages/LandingPage"; // Ensure the import is correct
+import BuyPage from "./pages/BuyPage";
+import SellPage from "./pages/SellPage";
+import LoginPage from "./pages/LoginPage";
 
 const App = () => {
   return (
     <Router>
-      <Header />
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<LandingPage />} />{" "}
+       
+        <Route path="/buy" element={<BuyPage />} />
+        <Route path="/sell" element={<SellPage />} />
         <Route path="/login" element={<LoginPage />} />
       </Routes>
     </Router>
