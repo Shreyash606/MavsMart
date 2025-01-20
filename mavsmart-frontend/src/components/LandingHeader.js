@@ -11,7 +11,7 @@ const LandingHeader = () => {
 
         <a
           href="/login"
-          className="px-4 py-2 bg-[#0064b1] text-white rounded hover:bg-indigo-500"
+          className="px-4 py-2 bg-[#0064b1] text-white rounded hover:bg-slate-500 hover:text-black"
         >
           Login
         </a>
