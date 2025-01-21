@@ -1,11 +1,12 @@
 import React from "react";
-import LandingHeader from "../components/LandingHeader";
+import LandingHeader from "../components/MainHeader";
+import { Link } from "react-router-dom";
 
 const LandingPage = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <LandingHeader />
-      <main className="flex-grow flex items-center justify-center text-center">
+      <main className="bg-[#ebedf0] flex-grow flex items-center justify-center text-center">
         <div>
           <h1 className="text-7xl font-bold text-gray-800">
             Welcome to <span className="text-[#0064b1]">Mavs</span>Mart!
@@ -14,18 +15,22 @@ const LandingPage = () => {
             The ultimate platform for Mavs to buy and sell items.
           </p>
           <div className="mt-8 space-x-4">
-            <a
-              href="/buy"
-              className="px-6 py-3 bg-[#0064b1] text-white rounded hover:bg-slate-500 hover:text-black" 
+            <button
+              type="button"
+              
+              class="text-white bg-[#0064b1] hover:bg-gray-300 hover:text-black focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 "
             >
-              Buy
-            </a>
-            <a
-              href="/sell"
-              className="px-6 py-3 bg-gray-200 text-gray-900 rounded hover:bg-[#0064b1] hover:text-white"
-            >
-              Sell
-            </a>
+            <Link to="/buy">Buy </Link>
+            </button>
+            
+            <button
+              type="button"
+              
+              class="text-black bg-gray-300 hover:bg-[#0064b1] hover:text-white focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 "
+            ><Link to="/sell">Sell </Link>
+             
+             
+            </button>
           </div>
         </div>
       </main>
