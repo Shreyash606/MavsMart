@@ -1,12 +1,24 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LandingHeader from "../components/MainHeader";
+import { onAuthStateChanged } from "firebase/auth"; // Import from Firebase
+import { auth } from "../Authentication/firebase-config"; // Import Firebase configuration
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Simulate user authentication status (replace this with actual logic)
-  const isLoggedIn = false; // Set to true if the user is logged in
+  // Check authentication state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsLoggedIn(true); // User is logged in
+      } else {
+        setIsLoggedIn(false); // User is not logged in
+      }
+    });
+    return () => unsubscribe(); // Clean up on component unmount
+  }, []);
 
   // Handle navigation for the "Sell" button
   const handleSellClick = () => {
