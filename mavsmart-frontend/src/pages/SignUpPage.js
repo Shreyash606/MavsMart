@@ -1,24 +1,48 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { auth, db } from "../Authentication/firebase-config";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { setDoc, doc } from "firebase/firestore";
 import MainHeader from "../components/MainHeader";
 
 const SignupPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // Add signup logic here (e.g., API call)
+    setError("");
 
-    // Simulate a successful signup
-    setTimeout(() => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+
+      // Update user's display name
+      await updateProfile(user, { displayName: name });
+
+      // Store additional details in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        name,
+        email,
+        phoneNumber,
+      });
+
       setLoading(false);
-      navigate("/login"); // Redirect to login page after successful signup
-    }, 2000);
+      navigate("/login");
+    } catch (err) {
+      setLoading(false);
+      setError(err.message || "Failed to sign up. Please try again.");
+    }
   };
 
   return (
@@ -34,6 +58,23 @@ const SignupPage = () => {
             <form onSubmit={handleSignup} className="space-y-6">
               <div>
                 <label
+                  htmlFor="name"
+                  className="block mb-2 text-sm font-medium text-gray-700"
+                >
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="bg-gray-100 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
+              <div>
+                <label
                   htmlFor="email"
                   className="block mb-2 text-sm font-medium text-gray-700"
                 >
@@ -46,6 +87,23 @@ const SignupPage = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="bg-gray-100 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                   placeholder="Enter your email"
+                  required
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="phoneNumber"
+                  className="block mb-2 text-sm font-medium text-gray-700"
+                >
+                  Phone Number
+                </label>
+                <input
+                  type="text"
+                  id="phoneNumber"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="bg-gray-100 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                  placeholder="Enter your phone number"
                   required
                 />
               </div>
@@ -67,7 +125,6 @@ const SignupPage = () => {
                 />
               </div>
 
-              {/* Display error message if signup fails */}
               {error && (
                 <div className="text-red-500 text-sm text-center mt-4">
                   {error}
@@ -76,7 +133,7 @@ const SignupPage = () => {
 
               <button
                 type="submit"
-                className="w-full text-white bg-[#0064b1] hover:bg-[#0064b1]-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+                className="w-full text-white bg-[#0064b1] hover:bg-[#005599] focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
                 disabled={loading}
               >
                 {loading ? "Signing Up..." : "Sign Up"}
@@ -84,12 +141,12 @@ const SignupPage = () => {
 
               <p className="text-sm text-center text-gray-500">
                 Already have an account?{" "}
-                <a
+                <span
                   onClick={() => navigate("/login")}
                   className="font-medium text-[#0064b1] hover:underline cursor-pointer"
                 >
                   Log in
-                </a>
+                </span>
               </p>
             </form>
           </div>
