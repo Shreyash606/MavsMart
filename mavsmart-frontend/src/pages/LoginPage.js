@@ -1,48 +1,46 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import LandingHeader from "../components/MainHeader";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import MainHeader from "../components/MainHeader";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState(""); // For showing error messages
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Handle login form submission
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Clear previous error messages
-    setErrorMessage("");
+    setErrorMessage(""); // Clear previous errors
+    setLoading(true); // Show loading state
 
-    // Simulate an API call to authenticate the user
     try {
-      // Example: replace with real API call
-      const response = await fetch("https://your-backend-api.com/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const auth = getAuth();
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
 
-      const data = await response.json();
+      // Store user info securely (use sessionStorage for session-based storage)
+      sessionStorage.setItem("isLoggedIn", "true");
+      sessionStorage.setItem("token", user.accessToken);
 
-      if (response.ok) {
-        // Assuming the API returns a token or a success status
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("token", data.token); // Save the token for further requests
-        navigate("/buy"); // Redirect to the buy page after login
-      } else {
-        // If credentials are invalid or there's an error from the server
-        setErrorMessage(
-          data.message || "Invalid credentials. Please try again."
-        );
-      }
+      // Navigate to Buy page after successful login
+      navigate("/buy");
     } catch (error) {
-      // Handle network errors or any issues with the API call
-      setErrorMessage("An error occurred. Please try again later.");
+      setErrorMessage(
+        error.code === "auth/wrong-password"
+          ? "Incorrect password. Please try again."
+          : error.code === "auth/user-not-found"
+          ? "No account found with this email."
+          : "Failed to log in. Please check your credentials."
+      );
+    } finally {
+      setLoading(false); // Hide loading state
     }
   };
 
@@ -70,6 +68,7 @@ const LoginPage = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="bg-gray-100 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                   placeholder="Enter your email"
+                  autoComplete="email"
                   required
                 />
               </div>
@@ -87,6 +86,7 @@ const LoginPage = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-gray-100 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                   placeholder="Enter your password"
+                  autoComplete="current-password"
                   required
                 />
               </div>
@@ -98,21 +98,23 @@ const LoginPage = () => {
                 </div>
               )}
 
+              {/* Login button */}
               <button
                 type="submit"
-                className="w-full text-white bg-[#0064b1] hover:bg-[#0064b1]-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+                className="w-full text-white bg-[#0064b1] hover:bg-[#005599] focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+                disabled={loading}
               >
-                Sign In
+                {loading ? "Signing In..." : "Sign In"}
               </button>
 
               <p className="text-sm text-center text-gray-500">
                 Don’t have an account yet?{" "}
-                <a
+                <span
                   onClick={() => navigate("/signup")}
                   className="font-medium text-[#0064b1] hover:underline cursor-pointer"
                 >
                   Sign up
-                </a>
+                </span>
               </p>
             </form>
           </div>

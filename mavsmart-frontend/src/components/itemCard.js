@@ -52,9 +52,7 @@ const ItemCard = ({
         </p>
         <div className="flex items-center justify-between mt-4">
           <span className="text-2xl font-bold text-gray-900">${price}</span>
-          <span className="text-sm font-semibold text-500">
-            ( Negotiable )
-          </span>
+          <span className="text-sm font-semibold text-500">( Negotiable )</span>
         </div>
         <div className="flex items-center justify-end">
           <button
