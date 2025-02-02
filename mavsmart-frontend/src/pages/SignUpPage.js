@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth, db } from "../Authentication/firebase-config";
+import { auth } from "../Authentication/firebase-config";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { setDoc, doc } from "firebase/firestore";
 import MainHeader from "../components/MainHeader";
 
 const SignupPage = () => {
@@ -19,7 +18,15 @@ const SignupPage = () => {
     setLoading(true);
     setError("");
 
+    // Check for UTA email domain
+    if (!email.endsWith("@mavs.uta.edu")) {
+      setError("Sign up with your UTA email address only. Please try again.");
+      setLoading(false);
+      return;
+    }
+
     try {
+      // Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -27,20 +34,40 @@ const SignupPage = () => {
       );
       const user = userCredential.user;
 
-      // Update user's display name
+      // Update user's display name in Firebase
       await updateProfile(user, { displayName: name });
 
-      // Store additional details in Firestore
-      await setDoc(doc(db, "users", user.uid), {
+      // Prepare user data for backend
+      const userData = {
+        uid: user.uid,
         name,
         email,
         phoneNumber,
+      };
+
+      console.log("Sending user data to backend:", userData);
+
+      // Save user data in MongoDB via backend API
+      const response = await fetch("http://localhost:5000/api/UserData", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error response from backend:", errorData);
+        throw new Error(
+          errorData.error || "Failed to save user details in the database."
+        );
+      }
+
+      console.log("User saved in database successfully.");
       setLoading(false);
       navigate("/login");
     } catch (err) {
       setLoading(false);
+      console.error("Error during signup:", err);
       setError(err.message || "Failed to sign up. Please try again.");
     }
   };
@@ -103,7 +130,8 @@ const SignupPage = () => {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   className="bg-gray-100 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                  placeholder="Enter your phone number"
+                  placeholder="123-456-7890"
+                  pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
                   required
                 />
               </div>

@@ -22,42 +22,44 @@ const LandingPage = () => {
 
   // Handle navigation for the "Sell" button
   const handleSellClick = () => {
-    if (!isLoggedIn) {
-      navigate("/login"); // Redirect to login page if not logged in
-    } else {
-      navigate("/sell"); // Redirect to sell page if logged in
-    }
+    navigate(auth.currentUser ? "/sell" : "/login");
   };
+
+  
+
+  const PrimaryButton = ({ children, onClick, isSecondary }) => (
+    <button
+      type="button"
+      className={`${
+        isSecondary
+          ? "text-black bg-gray-300 hover:bg-[#0064b1] hover:text-white"
+          : "text-white bg-[#0064b1] hover:bg-gray-300 hover:text-black"
+      } focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
 
   return (
     <div className="flex flex-col min-h-screen">
       <LandingHeader />
       <main className="bg-[#ebedf0] flex-grow flex items-center justify-center text-center">
         <div>
-          <h1 className="text-7xl font-bold text-gray-800">
+          <h1 className="text-8xl font-bold text-gray-800">
             Welcome to <span className="text-[#0064b1]">Mavs</span>Mart!
           </h1>
-          <p className="mt-4 text-3xl text-gray-800">
+          <p className="mt-4 text-4xl text-gray-800">
             The ultimate platform for Mavs to buy and sell items.
           </p>
           <div className="mt-8 space-x-4">
             {/* Buy Button */}
-            <button
-              type="button"
-              className="text-white bg-[#0064b1] hover:bg-gray-300 hover:text-black focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2"
-              onClick={() => navigate("/buy")}
-            >
-              Buy
-            </button>
+            <PrimaryButton onClick={() => navigate("/buy")}>Buy</PrimaryButton>
 
             {/* Sell Button */}
-            <button
-              type="button"
-              className="text-black bg-gray-300 hover:bg-[#0064b1] hover:text-white focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2"
-              onClick={handleSellClick}
-            >
+            <PrimaryButton onClick={handleSellClick} isSecondary>
               Sell
-            </button>
+            </PrimaryButton>
           </div>
         </div>
       </main>
