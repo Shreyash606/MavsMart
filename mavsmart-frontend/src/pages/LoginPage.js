@@ -15,6 +15,14 @@ const LoginPage = () => {
 
     setErrorMessage(""); // Clear previous errors
     setLoading(true); // Show loading state
+    // Check if the email is from the allowed domain
+    if (!email.endsWith("@mavs.uta.edu")) {
+      setErrorMessage(
+        "Login with your UTA email address only. Please try again."
+      );
+      setLoading(false);
+      return;
+    }
 
     try {
       const auth = getAuth();

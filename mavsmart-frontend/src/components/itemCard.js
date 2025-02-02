@@ -9,8 +9,10 @@ const ItemCard = ({
   uploadedBy,
   sold,
   price,
-  isLoggedIn, // Pass this prop to determine login status
-  itemId, // Pass a unique ID for the item
+  isLoggedIn,
+  itemId,
+  phone,
+  email,
 }) => {
   const navigate = useNavigate();
 
@@ -61,6 +63,20 @@ const ItemCard = ({
           >
             Buy
           </button>
+        </div>
+        <div className="flex items-center justify-between mt-4">
+          <a
+            href={`tel:${phone}`}
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
+            Call Seller
+          </a>
+          <a
+            href={`mailto:${email}`}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Email Seller
+          </a>
         </div>
       </div>
     </div>
