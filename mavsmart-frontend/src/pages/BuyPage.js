@@ -34,7 +34,7 @@ const BuyPage = () => {
   const fetchItems = async (user) => {
     try {
       const token = await user.getIdToken(); // Get Firebase token
-      const response = await axios.get("http://localhost:5000/api/items", {
+      const response = await axios.get("http://localhost:5002/api/items", {
         headers: {
           Authorization: `Bearer ${token}`, // Pass token in the header
         },

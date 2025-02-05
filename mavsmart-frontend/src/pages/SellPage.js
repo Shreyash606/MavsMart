@@ -11,13 +11,15 @@ const SellPage = () => {
   const [user, setUser] = useState(null); // Store user state
   const [formData, setFormData] = useState({
     category: "",
-    photo: "",
+
     title: "",
     description: "",
     usedDuration: "",
     uploadedBy: "",
     price: "",
     sold: false, // Default to unsold
+    photo: null,
+    photoPreview: null,
   });
   const [showToast, setShowToast] = useState([]);
 
@@ -38,16 +40,54 @@ const SellPage = () => {
     const { name, value, type, checked, files } = e.target;
 
     if (type === "file") {
-      setFormData({
-        ...formData,
-        [name]: files[0], // Store the file object
-        photoPreview: files[0] ? URL.createObjectURL(files[0]) : null, // Generate preview URL
-      });
+      const file = files[0];
+
+      // Immediately return if no file selected
+      if (!file) {
+        setFormData((prev) => ({
+          ...prev,
+          photo: null,
+          photoPreview: null,
+        }));
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        showToastMessage("Please upload an image file", "error");
+        e.target.value = ""; // Clear the file input
+        setFormData((prev) => ({
+          ...prev,
+          photo: null,
+          photoPreview: null,
+        }));
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        showToastMessage("File size must be less than 5MB", "error");
+        e.target.value = ""; // Clear the file input
+        setFormData((prev) => ({
+          ...prev,
+          photo: null,
+          photoPreview: null,
+        }));
+        return;
+      }
+
+      // Update state with valid file
+      setFormData((prev) => ({
+        ...prev,
+        [name]: file,
+        photoPreview: URL.createObjectURL(file),
+      }));
     } else {
-      setFormData({
-        ...formData,
+      // Handle non-file inputs
+      setFormData((prev) => ({
+        ...prev,
         [name]: type === "checkbox" ? checked : value,
-      });
+      }));
     }
   };
 
@@ -65,39 +105,52 @@ const SellPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Client-side validation for required fields
+    if (
+      !formData.category ||
+      !formData.title ||
+      !formData.description ||
+      !formData.usedDuration ||
+      !formData.price
+    ) {
+      showToastMessage("Please fill in all required fields", "error");
+      return;
+    }
+
     if (!user) {
       alert("You must be logged in to sell an item.");
       navigate("/login");
       return;
     }
+    if (!formData.photo) {
+      showToastMessage("Please upload a product photo", "error");
+      return;
+    }
 
     try {
-      let imageUrl = null;
-
+      const formDataToSend = new FormData();
+      formDataToSend.append("category", formData.category);
+      formDataToSend.append("title", formData.title);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("usedDuration", formData.usedDuration);
+      // Set uploadedBy to user's display name or email
+      formDataToSend.append("uploadedBy", user.displayName);
+      formDataToSend.append("price", formData.price);
+      formDataToSend.append("sold", formData.sold);
       if (formData.photo) {
-        imageUrl = formData.photo; // Assign the photo directly or a valid URL
+        formDataToSend.append("photo", formData.photo);
       }
 
-      // Match backend field names
-      const itemData = {
-        title: formData.title, // Map title to name
-        description: formData.description,
-        price: parseFloat(formData.price), // Ensure price is a number
-        category: formData.category,
-        photo: formData.photo || null,
-        // sold: formData.sold || false, // Default to false if not provided
-      };
-
-      console.log("Submitting itemData:", itemData);
+      // Log FormData entries for debugging
+      for (let pair of formDataToSend.entries()) {
+        console.log(pair[0], pair[1]);
+      }
 
       const token = await user.getIdToken();
-      const response = await fetch("http://localhost:5000/api/items", {
+      const response = await fetch("http://localhost:5002/api/items", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Firebase token
-        },
-        body: JSON.stringify(itemData),
+        headers: { Authorization: `Bearer ${token}` },
+        body: formDataToSend,
       });
 
       if (!response.ok) {
@@ -109,7 +162,9 @@ const SellPage = () => {
       }
 
       showToastMessage("Item added successfully!", "success");
-      navigate("/buy");
+      setTimeout(() => {
+        navigate("/buy");
+      }, 2000);
     } catch (error) {
       console.error("Error submitting item:", error);
       showToastMessage(error.message, "error");
@@ -177,7 +232,30 @@ const SellPage = () => {
               className="border p-2 rounded w-full"
             />
           </div>
-
+          {/* Photo Upload */}
+          <div>
+            <label htmlFor="photo" className="block font-medium mb-2">
+              Item Photo
+            </label>
+            <input
+              type="file"
+              id="photo"
+              name="photo"
+              accept="image/*"
+              onChange={handleChange}
+              className="border p-2 rounded w-full"
+            />
+            {formData.photoPreview && (
+              <div className="mt-4">
+                <p className="text-sm text-gray-500 mb-2">Preview:</p>
+                <img
+                  src={formData.photoPreview}
+                  alt="Preview"
+                  className="max-w-[200px] h-auto rounded-lg"
+                />
+              </div>
+            )}
+          </div>
           {/* Description */}
           <div>
             <label htmlFor="description" className="block font-medium mb-2">
@@ -212,7 +290,7 @@ const SellPage = () => {
             />
           </div>
 
-          {/* Uploaded By */}
+          {/* Uploaded By 
           <div>
             <label htmlFor="uploadedBy" className="block font-medium mb-2">
               Uploaded By
@@ -225,7 +303,7 @@ const SellPage = () => {
               required
               className="border p-2 rounded w-full"
             />
-          </div>
+          </div> */}
 
           {/* Sold */}
           <div>

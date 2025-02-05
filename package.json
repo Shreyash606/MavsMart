@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "firebase": "^11.2.0",
+    "typeit": "^8.8.7",
+    "typeit-react": "^2.7.8"
+  }
+}
