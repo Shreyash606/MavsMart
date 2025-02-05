@@ -1,82 +1,45 @@
+// components/ItemCard.jsx
 import React from "react";
-import { useNavigate } from "react-router-dom";
 
-const ItemCard = ({
-  photo,
-  title,
-  description,
-  usedDuration,
-  uploadedBy,
-  sold,
-  price,
-  isLoggedIn,
-  itemId,
-  phone,
-  email,
-}) => {
-  const navigate = useNavigate();
-
-  const handleBuy = () => {
-    if (!isLoggedIn) {
-      // Redirect to login with a return path to this item's detail page
-      navigate("/login", { state: { returnTo: `/details/${itemId}` } });
-    } else {
-      // Redirect to the item's details page
-      navigate(`/details/${itemId}`);
-    }
-  };
+const ItemCard = ({ item, isLoggedIn, navigate }) => {
+  // Construct image URL based on backend structure
+  const imageUrl = item.photo
+    ? `http://localhost:5002/uploads/${item.photo}`
+    : "/placeholder-image.jpg";
 
   return (
-    <div className="flex bg-white border border-gray-200 rounded-lg shadow mb-5">
-      {/* Image Section */}
-      <div className="w-1/3 p-4 flex-shrink-0">
+    <div className="border rounded-lg p-4 mb-4 shadow-md hover:shadow-lg transition-shadow cursor-pointer">
+      {/* Product Image */}
+      <div className="relative h-48 mb-4 overflow-hidden rounded-lg">
         <img
-          className="h-64 w-full object-cover rounded-l-lg"
-          src={photo}
-          alt={title}
+          src={imageUrl}
+          alt={item.title}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.src = "mavsmart-frontend/src/fallback.png"; // Fallback for broken images
+          }}
         />
       </div>
 
-      {/* Data Section */}
-      <div className="w-2/3 p-4">
-        <h5 className="text-xl font-semibold tracking-tight text-gray-900">
-          {title}
-        </h5>
-        <p className="text-gray-500 text-sm mt-1">{description}</p>
-        <p className="text-gray-500 text-sm mt-1">Used: {usedDuration}</p>
-        <p className="text-gray-500 text-sm mt-1">Seller: {uploadedBy}</p>
-        <p
-          className={`mt-2 font-bold ${
-            sold ? "text-red-500" : "text-green-500"
-          }`}
-        >
-          {sold ? "Sold" : "Unsold"}
+      {/* Product Details */}
+      <div className="space-y-2">
+        <h3 className="text-xl font-semibold truncate">{item.title}</h3>
+        <p className="text-gray-600 line-clamp-2 min-h-[3em]">
+          {item.description}
         </p>
-        <div className="flex items-center justify-between mt-4">
-          <span className="text-2xl font-bold text-gray-900">${price}</span>
-          <span className="text-sm font-semibold text-500">( Negotiable )</span>
+
+        <div className="flex justify-between items-center">
+          <span className="text-lg font-bold text-blue-600">
+            ${item.price.toFixed(2)}
+          </span>
+          <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+            {item.category}
+          </span>
         </div>
-        <div className="flex items-center justify-end">
-          <button
-            onClick={handleBuy}
-            className="mt-3 w-1/6 bg-[#0064b1] text-white py-2 rounded hover:bg-blue-800"
-          >
-            Buy
-          </button>
-        </div>
-        <div className="flex items-center justify-between mt-4">
-          <a
-            href={`tel:${phone}`}
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
-            Call Seller
-          </a>
-          <a
-            href={`mailto:${email}`}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Email Seller
-          </a>
+
+        <div className="flex justify-between text-sm text-gray-500">
+          <span>Used: {item.usedDuration}</span>
+          <span>Seller: {item.uploadedBy}</span>
         </div>
       </div>
     </div>

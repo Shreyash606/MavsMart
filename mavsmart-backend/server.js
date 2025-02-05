@@ -2,7 +2,10 @@ const express = require("express");
 const admin = require("firebase-admin");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const multer = require("multer");
+const path = require("path");
 const { MongoClient } = require("mongodb");
+require("dotenv").config(); // Load environment variables first
 
 // Initialize Firebase Admin SDK
 admin.initializeApp({
@@ -12,28 +15,60 @@ admin.initializeApp({
 });
 
 const app = express();
-const port = 5000;
+const port = 5002;
 
-const mongoUri = process.env.MONGO_URI;
- // MongoDB URI
+const mongoUri =
+  process.env.MONGODB_URI ||
+  "mongodb+srv://Mavs_User:d8CL42UtQKEYSlgv@cluster0.td6x8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 const client = new MongoClient(mongoUri);
+
 let mongoDB;
 
-async function connectToMongoDB() {
+async function connectToMongoDBAndStartServer() {
   try {
     await client.connect();
-    mongoDB = client.db("MavsMart"); // Database name
+    mongoDB = client.db("Mavs_User");
     console.log("Connected to MongoDB");
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
   } catch (err) {
     console.error("Error connecting to MongoDB:", err);
     process.exit(1);
   }
 }
 
-connectToMongoDB();
+connectToMongoDBAndStartServer();
 
 app.use(cors());
 app.use(bodyParser.json());
+app.use("/uploads", express.static("uploads")); // Serve uploaded files
+
+// Configure multer storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "./uploads");
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
+    );
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed!"), false);
+    }
+  },
+});
 
 // Middleware to authenticate Firebase tokens
 const authenticateUser = async (req, res, next) => {
@@ -45,7 +80,7 @@ const authenticateUser = async (req, res, next) => {
   const idToken = authHeader.split("Bearer ")[1];
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
-    req.user = decodedToken; // Attach user info to the request
+    req.user = decodedToken;
     next();
   } catch (error) {
     console.error("Firebase Authentication error:", error);
@@ -53,9 +88,8 @@ const authenticateUser = async (req, res, next) => {
   }
 };
 
-// API to get all items (BuyPage)
+// API to get all items
 app.get("/api/items", authenticateUser, async (req, res) => {
-  console.log("Request body received:", req.body);
   try {
     const itemsCollection = mongoDB.collection("items");
     const items = await itemsCollection.find({}).toArray();
@@ -66,12 +100,11 @@ app.get("/api/items", authenticateUser, async (req, res) => {
   }
 });
 
-// API to save user details (Signup Page)
+// API to save user details
 app.post("/api/UserData", async (req, res) => {
   const { uid, name, email, phoneNumber, avatar } = req.body;
 
   if (!uid || !name || !email || !phoneNumber) {
-    console.error("Missing fields:", req.body);
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -87,7 +120,6 @@ app.post("/api/UserData", async (req, res) => {
     };
 
     const result = await usersCollection.insertOne(newUser);
-    console.log("User added with ID:", result.insertedId);
     res
       .status(201)
       .json({ message: "User added successfully", id: result.insertedId });
@@ -99,36 +131,64 @@ app.post("/api/UserData", async (req, res) => {
   }
 });
 
-// API to post a new item (SellPage)
-app.post("/api/items", authenticateUser, async (req, res) => {
-  const { uid } = req.user; // Extracted from Firebase Authentication token
-  const { title, description, price, category, photo, sold } = req.body;
-
-  if (!title || !description || !price || !category) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-
-  try {
-    const itemsCollection = mongoDB.collection("items");
-    const newItem = {
+// API to post a new item
+app.post(
+  "/api/items",
+  authenticateUser,
+  upload.single("photo"),
+  async (req, res) => {
+    const { uid } = req.user;
+    const {
       title,
       description,
       price,
       category,
-      photo,
       sold,
-      createdAt: new Date(),
-    };
+      usedDuration,
+      uploadedBy,
+    } = req.body;
 
-    const result = await itemsCollection.insertOne(newItem);
-    res.status(201).json({ id: result.insertedId, ...newItem });
-  } catch (error) {
-    console.error("Error saving item to database:", error);
-    res.status(500).json({ error: "Error saving item to database." });
+    // Get uploaded file details
+    const photo = req.file
+      ? {
+          filename: req.file.filename,
+          path: `/uploads/${req.file.filename}`,
+        }
+      : null;
+
+    if (!title || !description || !price || !category || !usedDuration) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    try {
+      const itemsCollection = mongoDB.collection("items");
+      const newItem = {
+        title,
+        description,
+        price: parseFloat(price),
+        category,
+        photo,
+        sold: sold === "true",
+        usedDuration,
+        uploadedBy,
+        userId: uid,
+        createdAt: new Date(),
+      };
+
+      const result = await itemsCollection.insertOne(newItem);
+      res.status(201).json({
+        id: result.insertedId,
+        ...newItem,
+        // Include full URL for client access
+        photoUrl: photo
+          ? `${req.protocol}://${req.get("host")}${photo.path}`
+          : null,
+      });
+    } catch (error) {
+      console.error("Error saving item:", error);
+      // Cleanup uploaded file if DB operation fails
+      if (req.file) fs.promises.unlink(req.file.path).catch(console.error);
+      res.status(500).json({ error: "Error saving item" });
+    }
   }
-});
-
-// Start the server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+);

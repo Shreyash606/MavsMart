@@ -4,7 +4,6 @@ import { getAuth } from "firebase/auth";
 
 import { getAnalytics } from "firebase/analytics";
 
-
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDfeJxLfl84d23T8hUSABA8657rdj5tcjc",
@@ -26,4 +25,4 @@ const analytics = getAnalytics(app); // Firebase Analytics
 
 // Export initialized services
 
-export { auth, analytics};
+export { auth, analytics };
