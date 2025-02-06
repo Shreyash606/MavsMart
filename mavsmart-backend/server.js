@@ -133,7 +133,7 @@ app.post("/api/UserData", async (req, res) => {
       name,
       email,
       phoneNumber,
-      avatar,
+      
       createdAt: new Date(),
     };
 

@@ -16,75 +16,82 @@ const ItemCard = ({ item, isLoggedIn, navigate }) => {
   };
 
   return (
-    <div className="border rounded-lg p-4 mb-4 shadow-md hover:shadow-lg transition-shadow">
+    <div className="flex flex-col md:flex-row items-stretch mb-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 w-full">
       {/* Product Image */}
-      <div className="relative h-48 mb-4 overflow-hidden rounded-lg">
+      <div className="basis-1/3 flex-shrink-0 overflow-hidden rounded-t-lg md:rounded-s-lg md:rounded-tr-none flex items-center justify-center bg-gray-100">
         <img
           src={imageUrl}
+          style={{ width: "300px", height: "300px" }}
           alt={item.title}
-          className="w-full h-full object-cover"
+          className="w-full h-relative object-contain object-center p-1"
           onError={(e) => {
-            e.target.src = "/fallback.png";
+            e.target.src =
+              "https://via.placeholder.com/300?text=Image+Not+Available";
           }}
         />
       </div>
 
-      {/* Product Details */}
-      <div className="space-y-2">
-        <h3 className="text-xl font-semibold truncate">{item.title}</h3>
-        <p className="text-gray-600 line-clamp-2 min-h-[3em]">
-          {item.description}
-        </p>
-
-        <div className="flex justify-between items-center">
-          <span className="text-lg font-bold text-blue-600">
-            ${item.price.toFixed(2)}
-          </span>
-          <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
-            {item.category}
-          </span>
+      {/* Product Details - Now with dynamic height */}
+      <div className="flex flex-col md:basis-2/3 justify-between p-4 md:p-6 min-w-0 flex-1 min-h-[200px]">
+        <div className="min-w-0">
+          <h5 className="mb-2 text-xl md:text-2xl font-bold text-gray-900 truncate">
+            {item.title}
+          </h5>
+          <p className="mb-3 text-sm md:text-base text-gray-600 line-clamp-2 overflow-hidden">
+            {item.description}
+          </p>
         </div>
 
-        <div className="flex justify-between text-sm text-gray-500">
-          <span>Used: {item.usedDuration}</span>
-          <span>Seller: {item.uploadedBy}</span>
-        </div>
-
-        {/* Conditional Buttons */}
-        {!showContact ? (
-          <button
-            onClick={handleBuyClick}
-            className="w-full mt-4 bg-green-600 text-white py-2 rounded hover:bg-green-700 transition-colors"
-          >
-            Buy Now
-          </button>
-        ) : (
-          <div className="mt-4 space-y-2">
-            {/* Email */}
-            <div className="w-full bg-gray-100 p-2 rounded text-center">
-              <a
-                href={`mailto:${item.sellerEmail}`}
-                className="text-blue-500 hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Email: {item.sellerEmail}
-              </a>
-            </div>
-
-            {/* WhatsApp */}
-            <div className="w-full bg-gray-100 p-2 rounded text-center">
-              <a
-                href={`https://wa.me/${item.sellerPhone.replace(/\D/g, "")}`} // Remove non-numeric characters
-                className="text-green-500 hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                WhatsApp: {item.sellerPhone}
-              </a>
-            </div>
+        <div className="space-y-3 min-w-0">
+          <div className="flex justify-between items-center gap-2">
+            <span className="text-lg font-bold text-blue-600 truncate">
+              ${item.price.toFixed(2)}
+            </span>
+            <span className="flex-shrink-0 text-xs font-semibold bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full">
+              {item.category}
+            </span>
           </div>
-        )}
+
+          <div className="flex justify-between text-xs md:text-sm text-gray-500 gap-2">
+            <span className="truncate">🔧 Used: {item.usedDuration}</span>
+            <span className="truncate">👤 Seller: {item.uploadedBy}</span>
+          </div>
+
+          {/* Conditional Buttons */}
+          <div className="transition-all duration-300 flex justify-end">
+            {!showContact ? (
+              <button
+                type="button"
+                onClick={handleBuyClick}
+                className="text-white bg-[#0064b1] hover:bg-slate-500 hover:text-black focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 mb-2"
+              >
+                Buy Now
+              </button>
+            ) : (
+              <div className="flex flex-col">
+                <button
+                  onClick={() =>
+                    window.open(`mailto:${item.sellerEmail}`, "_self")
+                  }
+                  className="text-white bg-[#0064b1] hover:bg-slate-500 hover:text-black focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 mb-2"
+                >
+                  Email Seller
+                </button>
+                <button
+                  onClick={() =>
+                    window.open(
+                      `https://wa.me/${item.sellerPhone.replace(/\D/g, "")}`,
+                      "_blank"
+                    )
+                  }
+                  className="text-white bg-[#0064b1] hover:bg-slate-500 hover:text-black focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 mb-2"
+                >
+                  WhatsApp Seller
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
