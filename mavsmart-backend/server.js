@@ -18,22 +18,25 @@ const app = express();
 const port = 5002;
 
 const mongoUri =
-  process.env.MONGODB_URI ||
+  process.env.MONGO_URI ||
   "mongodb+srv://Mavs_User:d8CL42UtQKEYSlgv@cluster0.td6x8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 const client = new MongoClient(mongoUri);
 
 let mongoDB;
-
 async function connectToMongoDBAndStartServer() {
   try {
     await client.connect();
+
+    // Verify connection
+    await client.db("admin").command({ ping: 1 });
+    console.log("✅ Connected to MongoDB");
+
     mongoDB = client.db("Mavs_User");
-    console.log("Connected to MongoDB");
     app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
+      console.log(`🚀 Server running on port ${port}`);
     });
   } catch (err) {
-    console.error("Error connecting to MongoDB:", err);
+    console.error("❌ MongoDB connection failed:", err);
     process.exit(1);
   }
 }
@@ -100,9 +103,24 @@ app.get("/api/items", authenticateUser, async (req, res) => {
   }
 });
 
+// API to fetch all user data
+app.get("/api/UserData", authenticateUser, async (req, res) => {
+  try {
+    const usersCollection = mongoDB.collection("UserData");
+
+    // Fetch all user data
+    const users = await usersCollection.find({}).toArray();
+
+    res.status(200).json(users); // Send user data as response
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    res.status(500).json({ error: "Error fetching user data" });
+  }
+});
+
 // API to save user details
 app.post("/api/UserData", async (req, res) => {
-  const { uid, name, email, phoneNumber, avatar } = req.body;
+  const { uid, name, email, phoneNumber } = req.body;
 
   if (!uid || !name || !email || !phoneNumber) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -167,7 +185,12 @@ app.post(
         description,
         price: parseFloat(price),
         category,
-        photo,
+        photo: req.file
+          ? {
+              filename: req.file.filename,
+              path: `/uploads/${req.file.filename}`, // Set the path field
+            }
+          : null,
         sold: sold === "true",
         usedDuration,
         uploadedBy,
@@ -192,3 +215,5 @@ app.post(
     }
   }
 );
+
+

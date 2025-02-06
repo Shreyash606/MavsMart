@@ -77,7 +77,6 @@ const MainHeader = () => {
             )}
 
           {isLoggedIn ? (
-           
             <div className="relative">
               {/* Avatar and dropdown */}
               <img

@@ -7,6 +7,7 @@ import MainHeader from "../components/MainHeader";
 
 const BuyPage = () => {
   const [items, setItems] = useState([]); // Items fetched from the database
+
   const [category, setCategory] = useState("All"); // Filter by category
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Check if user is logged in
   const [loading, setLoading] = useState(true); // Loading state
@@ -24,6 +25,7 @@ const BuyPage = () => {
         setIsLoggedIn(false);
         setItems([]); // Clear items if logged out
         setLoading(false);
+
         navigate("/login"); // Redirect to login if not authenticated
       }
     });
@@ -34,14 +36,31 @@ const BuyPage = () => {
   const fetchItems = async (user) => {
     try {
       const token = await user.getIdToken(); // Get Firebase token
-      const response = await axios.get("http://localhost:5002/api/items", {
-        headers: {
-          Authorization: `Bearer ${token}`, // Pass token in the header
-        },
+
+      // Fetch items
+      const ItemsData = await axios.get("http://localhost:5002/api/items", {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      setItems(response.data); // Update state with fetched items
+
+      // Fetch user data
+      const UserData = await axios.get("http://localhost:5002/api/UserData", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Combine items and user data
+      const combinedData = ItemsData.data.map((item) => {
+        const seller = UserData.data.find((user) => user.uid === item.userId); // Match `uid` with `uploadedBy`
+        return {
+          ...item,
+          sellerEmail: seller?.email || "N/A", // Add seller's email
+          sellerPhone: seller?.phoneNumber || "N/A", // Add seller's phone number
+        };
+      });
+
+      console.log("Combined Data:", combinedData); // Debug: Check combined data
+      setItems(combinedData); // Update state
     } catch (error) {
-      console.error("Error fetching items:", error);
+      console.error("Error fetching data:", error.response || error.message);
       setError("Failed to fetch items. Please try again later.");
     } finally {
       setLoading(false);
@@ -90,6 +109,8 @@ const BuyPage = () => {
                 <option value="Phone">Phone</option>
                 <option value="Furniture">Furniture</option>
                 <option value="Books">Books</option>
+                <option value="Clothing">Clothing</option>
+                <option value="Others">Others</option>
               </select>
             </div>
 

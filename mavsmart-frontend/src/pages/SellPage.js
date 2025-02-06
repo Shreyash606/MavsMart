@@ -213,6 +213,8 @@ const SellPage = () => {
               <option value="Phone">Phone</option>
               <option value="Furniture">Furniture</option>
               <option value="Books">Books</option>
+              <option value="Clothing">Clothing</option>
+              <option value="Others">Others</option>
             </select>
           </div>
 

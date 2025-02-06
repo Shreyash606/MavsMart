@@ -1,14 +1,22 @@
 // components/ItemCard.jsx
-import React from "react";
+import React, { useState } from "react";
 
 const ItemCard = ({ item, isLoggedIn, navigate }) => {
-  // Construct image URL based on backend structure
+  const [showContact, setShowContact] = useState(false);
   const imageUrl = item.photo
-    ? `http://localhost:5002/uploads/${item.photo}`
+    ? `http://localhost:5002/uploads/${item.photo.filename}`
     : "/placeholder-image.jpg";
 
+  const handleBuyClick = () => {
+    if (!isLoggedIn) {
+      navigate("/login");
+      return;
+    }
+    setShowContact(true);
+  };
+
   return (
-    <div className="border rounded-lg p-4 mb-4 shadow-md hover:shadow-lg transition-shadow cursor-pointer">
+    <div className="border rounded-lg p-4 mb-4 shadow-md hover:shadow-lg transition-shadow">
       {/* Product Image */}
       <div className="relative h-48 mb-4 overflow-hidden rounded-lg">
         <img
@@ -16,7 +24,7 @@ const ItemCard = ({ item, isLoggedIn, navigate }) => {
           alt={item.title}
           className="w-full h-full object-cover"
           onError={(e) => {
-            e.target.src = "mavsmart-frontend/src/fallback.png"; // Fallback for broken images
+            e.target.src = "/fallback.png";
           }}
         />
       </div>
@@ -41,6 +49,42 @@ const ItemCard = ({ item, isLoggedIn, navigate }) => {
           <span>Used: {item.usedDuration}</span>
           <span>Seller: {item.uploadedBy}</span>
         </div>
+
+        {/* Conditional Buttons */}
+        {!showContact ? (
+          <button
+            onClick={handleBuyClick}
+            className="w-full mt-4 bg-green-600 text-white py-2 rounded hover:bg-green-700 transition-colors"
+          >
+            Buy Now
+          </button>
+        ) : (
+          <div className="mt-4 space-y-2">
+            {/* Email */}
+            <div className="w-full bg-gray-100 p-2 rounded text-center">
+              <a
+                href={`mailto:${item.sellerEmail}`}
+                className="text-blue-500 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Email: {item.sellerEmail}
+              </a>
+            </div>
+
+            {/* WhatsApp */}
+            <div className="w-full bg-gray-100 p-2 rounded text-center">
+              <a
+                href={`https://wa.me/${item.sellerPhone.replace(/\D/g, "")}`} // Remove non-numeric characters
+                className="text-green-500 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                WhatsApp: {item.sellerPhone}
+              </a>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
