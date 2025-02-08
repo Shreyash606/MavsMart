@@ -1,0 +1,3 @@
+mavsmart-backend/
+node_modules/
+*.env
