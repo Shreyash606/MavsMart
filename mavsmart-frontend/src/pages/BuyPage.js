@@ -38,8 +38,12 @@ const BuyPage = () => {
     try {
       setLoading(true);
       const token = await user.getIdToken(); // Get Firebase token
+<<<<<<< HEAD
       await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate delay
 
+=======
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+>>>>>>> fdfc11a3befa9773e6ca8f4da11d69cd5e48e3ec
       // Fetch items
       const ItemsData = await axios.get("http://localhost:5002/api/items", {
         headers: { Authorization: `Bearer ${token}` },
