@@ -26,7 +26,7 @@ const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
           alt={item.title}
           className="w-full h-relative object-contain object-center p-1"
           onError={(e) => {
-            e.target.src = "../fallback.png";
+            e.target.src = "";
           }}
         />
       </div>
