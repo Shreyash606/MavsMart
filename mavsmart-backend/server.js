@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 require("dotenv").config(); // Load environment variables first
 
 // Initialize Firebase Admin SDK
@@ -103,26 +103,43 @@ app.get("/api/items", authenticateUser, async (req, res) => {
   }
 });
 
-// API to fetch all user data
 app.get("/api/UserData", authenticateUser, async (req, res) => {
   try {
     const usersCollection = mongoDB.collection("UserData");
-
-    // Fetch all user data
     const users = await usersCollection.find({}).toArray();
-
-    res.status(200).json(users); // Send user data as response
+    res.status(200).json(users);
   } catch (error) {
     console.error("Error fetching user data:", error);
     res.status(500).json({ error: "Error fetching user data" });
   }
 });
 
+// API to fetch all user data
+// Add endpoint to get user by UID
+app.get("/api/UserData/:uid", authenticateUser, async (req, res) => {
+  try {
+    const usersCollection = mongoDB.collection("UserData");
+    const user = await usersCollection.findOne({ uid: req.params.uid });
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.status(200).json({
+      uid: user.uid,
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar,
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Error fetching user data" });
+  }
+});
+
 // API to save user details
 app.post("/api/UserData", async (req, res) => {
-  const { uid, name, email, phoneNumber } = req.body;
+  const { uid, name, email, phoneNumber, avatar } = req.body;
 
   if (!uid || !name || !email || !phoneNumber) {
+    // Avatar is now optional
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -133,19 +150,18 @@ app.post("/api/UserData", async (req, res) => {
       name,
       email,
       phoneNumber,
-      
+      avatar: avatar || null, // Store avatar if provided
       createdAt: new Date(),
     };
 
     const result = await usersCollection.insertOne(newUser);
-    res
-      .status(201)
-      .json({ message: "User added successfully", id: result.insertedId });
+    res.status(201).json({
+      message: "User added successfully",
+      id: result.insertedId,
+    });
   } catch (error) {
-    console.error("Error saving user to database:", error);
-    res
-      .status(500)
-      .json({ error: "Error saving user details in the database" });
+    console.error("Error saving user:", error);
+    res.status(500).json({ error: "Error saving user details" });
   }
 });
 
@@ -216,4 +232,22 @@ app.post(
   }
 );
 
+app.delete("/api/items/:id", authenticateUser, async (req, res) => {
+  const { id } = req.params;
 
+  try {
+    const itemsCollection = mongoDB.collection("items");
+
+    // Convert the `id` to a MongoDB ObjectId
+    const result = await itemsCollection.deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    res.status(200).json({ message: "Item deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting item:", error);
+    res.status(500).json({ error: "Error deleting item" });
+  }
+});

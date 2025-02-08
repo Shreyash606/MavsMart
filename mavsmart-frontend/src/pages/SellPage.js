@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import MainHeader from "../components/MainHeader";
 import Toast from "../components/Toast";
+import Spinner from "../components/Spinner";
 
 const SellPage = () => {
   const navigate = useNavigate();
   const auth = getAuth();
+  const [loading, setLoading] = useState(false); // Track submission process
 
   const [user, setUser] = useState(null); // Store user state
   const [formData, setFormData] = useState({
@@ -22,6 +24,16 @@ const SellPage = () => {
     photoPreview: null,
   });
   const [showToast, setShowToast] = useState([]);
+
+  const showToastMessage = (message, type) => {
+    const id = Date.now(); // Unique ID for each toast
+    setShowToast((prevToasts) => [...prevToasts, { id, message, type }]);
+    setTimeout(() => {
+      setShowToast((prevToasts) =>
+        prevToasts.filter((toast) => toast.id !== id)
+      );
+    }, 3000);
+  };
 
   // Monitor authentication state
   useEffect(() => {
@@ -91,16 +103,6 @@ const SellPage = () => {
     }
   };
 
-  const showToastMessage = (message, type) => {
-    const id = Date.now(); // Unique ID for each toast
-    setShowToast((prevToasts) => [...prevToasts, { id, message, type }]);
-    setTimeout(() => {
-      setShowToast((prevToasts) =>
-        prevToasts.filter((toast) => toast.id !== id)
-      );
-    }, 3000);
-  };
-
   // When submitting the form:
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -126,6 +128,8 @@ const SellPage = () => {
       showToastMessage("Please upload a product photo", "error");
       return;
     }
+
+    setLoading(true); // Start loading spinner
 
     try {
       const formDataToSend = new FormData();
@@ -168,9 +172,10 @@ const SellPage = () => {
     } catch (error) {
       console.error("Error submitting item:", error);
       showToastMessage(error.message, "error");
+    } finally {
+      setLoading(false); // Stop loading spinner
     }
   };
-
   return (
     <div className="flex flex-col min-h-screen">
       <MainHeader />
@@ -189,110 +194,114 @@ const SellPage = () => {
           />
         ))}
       </div>
+      {loading ? (
+        <div className="flex justify-center items-center min-h-screen">
+          <Spinner /> {/* Replace this with your spinner component */}
+        </div>
+      ) : (
+        <div className="container mx-auto p-4">
+          <h1 className="text-2xl font-bold mb-4">Sell Your Item</h1>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Category */}
+            <div>
+              <label htmlFor="category" className="block font-medium mb-2">
+                Category
+              </label>
+              <select
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+                className="border p-2 rounded w-full"
+              >
+                <option value="" disabled>
+                  Select a category
+                </option>
+                <option value="Laptop">Laptop</option>
+                <option value="Phone">Phone</option>
+                <option value="Furniture">Furniture</option>
+                <option value="Books">Books</option>
+                <option value="Clothing">Clothing</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
 
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Sell Your Item</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Category */}
-          <div>
-            <label htmlFor="category" className="block font-medium mb-2">
-              Category
-            </label>
-            <select
-              id="category"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              required
-              className="border p-2 rounded w-full"
-            >
-              <option value="" disabled>
-                Select a category
-              </option>
-              <option value="Laptop">Laptop</option>
-              <option value="Phone">Phone</option>
-              <option value="Furniture">Furniture</option>
-              <option value="Books">Books</option>
-              <option value="Clothing">Clothing</option>
-              <option value="Others">Others</option>
-            </select>
-          </div>
+            {/* Title */}
+            <div>
+              <label htmlFor="title" className="block font-medium mb-2">
+                Title
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                required
+                placeholder="Enter a title for your item"
+                className="border p-2 rounded w-full"
+              />
+            </div>
+            {/* Photo Upload */}
+            <div>
+              <label htmlFor="photo" className="block font-medium mb-2">
+                Item Photo
+              </label>
+              <input
+                type="file"
+                id="photo"
+                name="photo"
+                accept="image/*"
+                onChange={handleChange}
+                className="border p-2 rounded w-full"
+              />
+              {formData.photoPreview && (
+                <div className="mt-4">
+                  <p className="text-sm text-gray-500 mb-2">Preview:</p>
+                  <img
+                    src={formData.photoPreview}
+                    alt="Preview"
+                    className="max-w-[200px] h-auto rounded-lg"
+                  />
+                </div>
+              )}
+            </div>
+            {/* Description */}
+            <div>
+              <label htmlFor="description" className="block font-medium mb-2">
+                Description
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                required
+                placeholder="Enter a detailed description"
+                className="border p-2 rounded w-full"
+                rows="3"
+              ></textarea>
+            </div>
 
-          {/* Title */}
-          <div>
-            <label htmlFor="title" className="block font-medium mb-2">
-              Title
-            </label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              required
-              placeholder="Enter a title for your item"
-              className="border p-2 rounded w-full"
-            />
-          </div>
-          {/* Photo Upload */}
-          <div>
-            <label htmlFor="photo" className="block font-medium mb-2">
-              Item Photo
-            </label>
-            <input
-              type="file"
-              id="photo"
-              name="photo"
-              accept="image/*"
-              onChange={handleChange}
-              className="border p-2 rounded w-full"
-            />
-            {formData.photoPreview && (
-              <div className="mt-4">
-                <p className="text-sm text-gray-500 mb-2">Preview:</p>
-                <img
-                  src={formData.photoPreview}
-                  alt="Preview"
-                  className="max-w-[200px] h-auto rounded-lg"
-                />
-              </div>
-            )}
-          </div>
-          {/* Description */}
-          <div>
-            <label htmlFor="description" className="block font-medium mb-2">
-              Description
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              required
-              placeholder="Enter a detailed description"
-              className="border p-2 rounded w-full"
-              rows="3"
-            ></textarea>
-          </div>
+            {/* Used Duration */}
+            <div>
+              <label htmlFor="usedDuration" className="block font-medium mb-2">
+                Used For
+              </label>
+              <input
+                type="text"
+                id="usedDuration"
+                name="usedDuration"
+                value={formData.usedDuration}
+                onChange={handleChange}
+                required
+                placeholder="e.g., 6 months, 1 year"
+                className="border p-2 rounded w-full"
+              />
+            </div>
 
-          {/* Used Duration */}
-          <div>
-            <label htmlFor="usedDuration" className="block font-medium mb-2">
-              Used For
-            </label>
-            <input
-              type="text"
-              id="usedDuration"
-              name="usedDuration"
-              value={formData.usedDuration}
-              onChange={handleChange}
-              required
-              placeholder="e.g., 6 months, 1 year"
-              className="border p-2 rounded w-full"
-            />
-          </div>
-
-          {/* Uploaded By 
+            {/* Uploaded By 
           <div>
             <label htmlFor="uploadedBy" className="block font-medium mb-2">
               Uploaded By
@@ -307,49 +316,52 @@ const SellPage = () => {
             />
           </div> */}
 
-          {/* Sold */}
-          <div>
-            <label className="block font-medium mb-2">Is the item sold?</label>
-            <label className="inline-flex items-center">
+            {/* Sold */}
+            <div>
+              <label className="block font-medium mb-2">
+                Is the item sold?
+              </label>
+              <label className="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  name="sold"
+                  checked={formData.sold}
+                  onChange={handleChange}
+                  className="w-4 h-4"
+                />
+                <span className="ml-2">Mark as sold</span>
+              </label>
+            </div>
+
+            {/* Price */}
+            <div>
+              <label htmlFor="price" className="block font-medium mb-2">
+                Price (in $)
+              </label>
               <input
-                type="checkbox"
-                name="sold"
-                checked={formData.sold}
+                type="number"
+                id="price"
+                name="price"
+                value={formData.price}
                 onChange={handleChange}
-                className="w-4 h-4"
+                required
+                placeholder="Enter the price"
+                className="border p-2 rounded w-full"
               />
-              <span className="ml-2">Mark as sold</span>
-            </label>
-          </div>
+            </div>
 
-          {/* Price */}
-          <div>
-            <label htmlFor="price" className="block font-medium mb-2">
-              Price (in $)
-            </label>
-            <input
-              type="number"
-              id="price"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              required
-              placeholder="Enter the price"
-              className="border p-2 rounded w-full"
-            />
-          </div>
-
-          {/* Submit Button */}
-          <div>
-            <button
-              type="submit"
-              className="w-full bg-blue-700 text-white py-2 rounded hover:bg-blue-800"
-            >
-              Submit Item
-            </button>
-          </div>
-        </form>
-      </div>
+            {/* Submit Button */}
+            <div>
+              <button
+                type="submit"
+                className="w-full bg-blue-700 text-white py-2 rounded hover:bg-blue-800"
+              >
+                Submit Item
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };
