@@ -2,23 +2,35 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import MainHeader from "../components/MainHeader";
+import Toast from "../components/Toast";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showToast, setShowToast] = useState([]); // Toast state
   const navigate = useNavigate();
+
+  // Utility function for displaying toast messages
+  const showToastMessage = (message, type) => {
+    const id = Date.now(); // Unique ID for each toast
+    setShowToast((prevToasts) => [...prevToasts, { id, message, type }]);
+    setTimeout(() => {
+      setShowToast((prevToasts) =>
+        prevToasts.filter((toast) => toast.id !== id)
+      );
+    }, 3000); // Remove toast after 3 seconds
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true); // Show loading spinner
 
-    setErrorMessage(""); // Clear previous errors
-    setLoading(true); // Show loading state
     // Check if the email is from the allowed domain
     if (!email.endsWith("@mavs.uta.edu")) {
-      setErrorMessage(
-        "Login with your UTA email address only. Please try again."
+      showToastMessage(
+        "Login with your UTA email address only. Please try again.",
+        "error"
       );
       setLoading(false);
       return;
@@ -37,24 +49,48 @@ const LoginPage = () => {
       sessionStorage.setItem("isLoggedIn", "true");
       sessionStorage.setItem("token", user.accessToken);
 
+      showToastMessage(
+        "Login successful! Welcome back to MavsMart.",
+        "success"
+      );
+
       // Navigate to Buy page after successful login
-      navigate("/buy");
+      setTimeout(() => navigate("/buy"), 2000);
     } catch (error) {
-      setErrorMessage(
+      const errorMessage =
         error.code === "auth/wrong-password"
           ? "Incorrect password. Please try again."
           : error.code === "auth/user-not-found"
           ? "No account found with this email."
-          : "Failed to log in. Please check your credentials."
-      );
+          : "Failed to log in. Please check your credentials.";
+
+      showToastMessage(errorMessage, "error");
     } finally {
-      setLoading(false); // Hide loading state
+      setLoading(false); // Hide loading spinner
     }
   };
 
   return (
     <section className="bg-gray-50 min-h-screen flex flex-col">
       <MainHeader showLoginButton={false} />
+
+      {/* Toast Container */}
+      <div className="fixed top-4 right-4 z-50">
+        {showToast.map((toast) => (
+          <Toast
+            key={toast.id}
+            id={toast.id}
+            message={toast.message}
+            type={toast.type}
+            onClose={() =>
+              setShowToast((prevToasts) =>
+                prevToasts.filter((t) => t.id !== toast.id)
+              )
+            }
+          />
+        ))}
+      </div>
+
       <div className="flex-grow flex items-center justify-center">
         <div className="w-full bg-white rounded-lg shadow dark:border sm:max-w-md xl:p-0">
           <div className="p-6 space-y-6 md:space-y-8 sm:p-8">
@@ -98,13 +134,6 @@ const LoginPage = () => {
                   required
                 />
               </div>
-
-              {/* Display error message if login fails */}
-              {errorMessage && (
-                <div className="text-red-500 text-sm text-center mt-4">
-                  {errorMessage}
-                </div>
-              )}
 
               {/* Login button */}
               <button

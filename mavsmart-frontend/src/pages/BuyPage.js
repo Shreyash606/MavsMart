@@ -4,6 +4,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import ItemCard from "../components/itemCard";
 import MainHeader from "../components/MainHeader";
+import Spinner from "../components/Spinner";
 
 const BuyPage = () => {
   const [items, setItems] = useState([]); // Items fetched from the database
@@ -35,8 +36,9 @@ const BuyPage = () => {
 
   const fetchItems = async (user) => {
     try {
+      setLoading(true);
       const token = await user.getIdToken(); // Get Firebase token
-
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       // Fetch items
       const ItemsData = await axios.get("http://localhost:5002/api/items", {
         headers: { Authorization: `Bearer ${token}` },
@@ -79,6 +81,29 @@ const BuyPage = () => {
           item.category.toLowerCase().includes(category.toLowerCase())
         );
 
+  const handleDelete = async (itemId) => {
+    try {
+      const token = await auth.currentUser.getIdToken();
+
+      const response = await axios.delete(
+        `http://localhost:5002/api/items/${itemId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.status === 200) {
+        setItems((prevItems) =>
+          prevItems.filter((item) => item._id !== itemId)
+        );
+        alert("Item deleted successfully!");
+      }
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      alert("Failed to delete the item. Please try again.");
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <MainHeader />
@@ -90,7 +115,9 @@ const BuyPage = () => {
 
         {/* Loading State */}
         {loading ? (
-          <div className="text-center">Loading items...</div>
+          <div className="flex justify-center items-center h-64">
+            <Spinner /> {/* Display Spinner while loading */}
+          </div>
         ) : (
           <>
             {/* Filter by Category */}
@@ -123,6 +150,7 @@ const BuyPage = () => {
                     item={item}
                     isLoggedIn={isLoggedIn}
                     navigate={navigate} // Pass navigate for redirection
+                    handleDelete={handleDelete} // Pass delete handler
                   />
                 ))
               ) : (
