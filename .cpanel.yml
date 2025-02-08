@@ -1,5 +1,5 @@
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/sdt9850/public_html
+    - export DEPLOYPATH=/home/sdt9850/public_html/MavsMart/mavsmart-frontend
     - /bin/rm -rf $DEPLOYPATH/*
     - /bin/cp -r mavsmart-frontend/build/* $DEPLOYPATH
