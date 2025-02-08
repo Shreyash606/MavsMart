@@ -25,8 +25,6 @@ const LandingPage = () => {
     navigate(auth.currentUser ? "/sell" : "/login");
   };
 
-  
-
   const PrimaryButton = ({ children, onClick, isSecondary }) => (
     <button
       type="button"
@@ -46,11 +44,12 @@ const LandingPage = () => {
       <LandingHeader />
       <main className="bg-[#ebedf0] flex-grow flex items-center justify-center text-center">
         <div>
-          <h1 className="text-8xl font-bold text-gray-800">
+          <h1 className="text-7xl font-bold text-gray-800">
             Welcome to <span className="text-[#0064b1]">Mavs</span>Mart!
           </h1>
           <p className="mt-4 text-4xl text-gray-800">
-            The ultimate platform for Mavs to buy and sell items.
+            {/*The ultimate platform for Mavs to buy and sell items.*/}
+            Simplifying life for every Maverick!
           </p>
           <div className="mt-8 space-x-4">
             {/* Buy Button */}

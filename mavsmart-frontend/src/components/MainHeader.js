@@ -1,27 +1,87 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getAuth, signOut } from "firebase/auth"; // Import Firebase auth methods
+import DropdownMenu from "./DropDown";
 
 const MainHeader = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [userName, setUserName] = useState(""); // State for storing user name
+  const [userData, setUserData] = useState({});
+  const [userName, setUserName] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
+  const getInitials = (name) => {
+    if (!name) return "U";
 
-  useEffect(() => {
-    // Check if the user is logged in (can also use Firebase auth state for real-time changes)
-    const auth = getAuth();
-    const user = auth.currentUser;
+    const names = name.split(" ");
+    let initials = names[0].substring(0, 1).toUpperCase();
 
-    if (user) {
-      setIsLoggedIn(true);
-      setUserName(user.displayName || "User"); // Set display name, default to "User"
-    } else {
-      setIsLoggedIn(false);
-      setUserName(""); // Reset name if user is logged out
+    if (names.length > 1) {
+      initials += names[names.length - 1].substring(0, 1).toUpperCase();
     }
+
+    return initials;
+  };
+
+  // Generate background color based on name
+  const generateBackgroundColor = (name) => {
+    if (!name) return "#0064b1"; // Default color
+
+    const colors = [
+      "#0064b1", // Blue
+      "#2ecc71", // Green
+      "#e74c3c", // Red
+      "#f1c40f", // Yellow
+      "#9b59b6", // Purple
+      "#e67e22", // Orange
+    ];
+
+    const hash = name
+      .split("")
+      .reduce((acc, char) => char.charCodeAt(0) + acc, 0);
+
+    return colors[hash % colors.length];
+  };
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+
+        if (user) {
+          const token = await user.getIdToken();
+
+          // Fetch user data from your backend
+          const response = await fetch("http://localhost:5002/api/UserData", {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const currentUser = data.find((u) => u.uid === user.uid); // Match user by UID
+
+            if (currentUser) {
+              setUserData(currentUser);
+              setUserName(currentUser.name || "User"); // Set user's name or default to "User"
+              setIsLoggedIn(true); // Set logged-in state after verifying user
+            }
+          } else {
+            console.error("Failed to fetch user data");
+          }
+        } else {
+          setIsLoggedIn(false);
+          setUserName("");
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
   }, []);
 
   // Handle logout
@@ -43,9 +103,25 @@ const MainHeader = () => {
     <header className="bg-[#d6d6db]">
       <div className="container mx-auto flex items-center justify-between p-4">
         {/* Show MavsMart logo on all pages */}
-        <h1 className="text-4xl font-bold text-[#0064b1] font-sans-serif">
-          <Link to="/">MavsMart</Link>
-        </h1>
+        <div className="flex flex-row items-center space-x-3">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-8 h-8 "
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+            />
+          </svg>
+          <h1 className="text-4xl font-bold text-[#0064b1] font-sans-serif">
+            <Link to="/">MavsMart</Link>
+          </h1>
+        </div>
 
         {/* Handle navigation based on the current path */}
         <nav className="space-x-4 flex items-center">
@@ -78,37 +154,24 @@ const MainHeader = () => {
 
           {isLoggedIn ? (
             <div className="relative">
-              {/* Avatar and dropdown */}
-              <img
-                id="avatarButton"
-                type="button"
+              {/* Avatar with initials */}
+              <div
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-10 h-10 rounded-full cursor-pointer"
-                src="https://api.dicebear.com/9.x/bottts/svg?seed=random"
-                alt="User dropdown"
-              />
+                className="w-10 h-10 rounded-full cursor-pointer flex items-center justify-center text-white font-semibold"
+                style={{
+                  backgroundColor: generateBackgroundColor(userName),
+                  fontSize: "1rem",
+                }}
+              >
+                {getInitials(userName)}
+              </div>
 
               {/* Dropdown menu */}
-
               {isDropdownOpen && (
-                <div
-                  id="userDropdown"
-                  className="z-10 absolute right-0 mt-2 bg-[#d6d6db] divide-y divide-gray-100 rounded-lg shadow-sm w-44 text-center"
-                >
-                  <div className="px-4 py-3 text-sm text-black-900 text-sm">
-                    <div>{userName}</div>
-                  </div>
-
-                  <div className="py-1">
-                    <a
-                      href="#"
-                      onClick={handleLogout}
-                      className="block px-4 py-2 text-sm text-black-900 hover:bg-[#0064b1] hover:text-white text-sm"
-                    >
-                      Sign out
-                    </a>
-                  </div>
-                </div>
+                <DropdownMenu
+                  userName={userName || "User"}
+                  handleLogout={handleLogout}
+                />
               )}
             </div>
           ) : (

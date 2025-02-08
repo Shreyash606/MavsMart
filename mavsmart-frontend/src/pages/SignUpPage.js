@@ -3,24 +3,39 @@ import { useNavigate } from "react-router-dom";
 import { auth } from "../Authentication/firebase-config";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import MainHeader from "../components/MainHeader";
+import Toast from "../components/Toast";
 
 const SignupPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showToast, setShowToast] = useState([]); // Manage toast notifications
+
   const navigate = useNavigate();
+
+  // Utility function to handle toast messages
+  const showToastMessage = (message, type) => {
+    const id = Date.now(); // Unique ID for each toast
+    setShowToast((prevToasts) => [...prevToasts, { id, message, type }]);
+    setTimeout(() => {
+      setShowToast((prevToasts) =>
+        prevToasts.filter((toast) => toast.id !== id)
+      );
+    }, 3000); // Auto-remove after 3 seconds
+  };
 
   const handleSignup = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     // Check for UTA email domain
     if (!email.endsWith("@mavs.uta.edu")) {
-      setError("Sign up with your UTA email address only. Please try again.");
+      showToastMessage(
+        "Sign up with your UTA email address only. Please try again.",
+        "error"
+      );
       setLoading(false);
       return;
     }
@@ -33,8 +48,6 @@ const SignupPage = () => {
         password
       );
       const user = userCredential.user;
-
-      // Update user's display name in Firebase
       await updateProfile(user, { displayName: name });
 
       // Prepare user data for backend
@@ -45,8 +58,6 @@ const SignupPage = () => {
         phoneNumber,
       };
 
-      console.log("Sending user data to backend:", userData);
-
       // Save user data in MongoDB via backend API
       const response = await fetch("http://localhost:5002/api/UserData", {
         method: "POST",
@@ -54,27 +65,44 @@ const SignupPage = () => {
         body: JSON.stringify(userData),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error response from backend:", errorData);
-        throw new Error(
-          errorData.error || "Failed to save user details in the database."
-        );
-      }
+      if (!response.ok) throw new Error("Failed to save user data");
 
-      console.log("User saved in database successfully.");
-      setLoading(false);
-      navigate("/login");
+      // Show success toast
+      showToastMessage(
+        "Your account has been successfully created!",
+        "success"
+      );
+
+      // Redirect to login after a short delay to let the toast display
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
+      showToastMessage(err.message || "Signup failed", "error");
+    } finally {
       setLoading(false);
-      console.error("Error during signup:", err);
-      setError(err.message || "Failed to sign up. Please try again.");
     }
   };
 
   return (
     <div className="flex flex-col min-h-screen">
       <MainHeader showLoginButton={false} />
+
+      {/* Toast Container */}
+      <div className="fixed top-6 right-4 z-50">
+        {showToast.map((toast) => (
+          <Toast
+            key={toast.id}
+            id={toast.id}
+            message={toast.message}
+            type={toast.type}
+            onClose={() =>
+              setShowToast((prevToasts) =>
+                prevToasts.filter((t) => t.id !== toast.id)
+              )
+            }
+          />
+        ))}
+      </div>
+
       <main className="bg-gray-50 flex-grow flex items-center justify-center">
         <div className="w-full bg-white rounded-lg shadow sm:max-w-md xl:p-0">
           <div className="p-6 space-y-6 md:space-y-8 sm:p-8">
@@ -153,12 +181,6 @@ const SignupPage = () => {
                 />
               </div>
 
-              {error && (
-                <div className="text-red-500 text-sm text-center mt-4">
-                  {error}
-                </div>
-              )}
-
               <button
                 type="submit"
                 className="w-full text-white bg-[#0064b1] hover:bg-[#005599] focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
@@ -170,7 +192,7 @@ const SignupPage = () => {
               <p className="text-sm text-center text-gray-500">
                 Already have an account?{" "}
                 <span
-                  onClick={() => navigate("/login")}
+                  onClick={() => navigate("/buy")}
                   className="font-medium text-[#0064b1] hover:underline cursor-pointer"
                 >
                   Log in

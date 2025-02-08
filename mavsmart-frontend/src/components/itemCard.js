@@ -1,7 +1,8 @@
 // components/ItemCard.jsx
 import React, { useState } from "react";
+import { auth } from "../Authentication/firebase-config";
 
-const ItemCard = ({ item, isLoggedIn, navigate }) => {
+const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
   const [showContact, setShowContact] = useState(false);
   const imageUrl = item.photo
     ? `http://localhost:5002/uploads/${item.photo.filename}`
@@ -25,8 +26,7 @@ const ItemCard = ({ item, isLoggedIn, navigate }) => {
           alt={item.title}
           className="w-full h-relative object-contain object-center p-1"
           onError={(e) => {
-            e.target.src =
-              "https://via.placeholder.com/300?text=Image+Not+Available";
+            e.target.src = "../fallback.png";
           }}
         />
       </div>
@@ -53,12 +53,12 @@ const ItemCard = ({ item, isLoggedIn, navigate }) => {
           </div>
 
           <div className="flex justify-between text-xs md:text-sm text-gray-500 gap-2">
-            <span className="truncate">🔧 Used: {item.usedDuration}</span>
-            <span className="truncate">👤 Seller: {item.uploadedBy}</span>
+            <span className="truncate">Used: {item.usedDuration}</span>
+            <span className="truncate">Seller: {item.uploadedBy}</span>
           </div>
 
           {/* Conditional Buttons */}
-          <div className="transition-all duration-300 flex justify-end">
+          <div className="transition-all duration-300 flex flex-col justify-end">
             {!showContact ? (
               <button
                 type="button"
@@ -89,6 +89,17 @@ const ItemCard = ({ item, isLoggedIn, navigate }) => {
                   WhatsApp Seller
                 </button>
               </div>
+            )}
+
+            {/* Delete Button */}
+            {isLoggedIn && item.uploadedBy === auth.currentUser.displayName && (
+              <button
+                type="button"
+                onClick={() => handleDelete(item._id)} // Call delete handler
+                className="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-200 font-medium rounded-lg text-sm px-5 py-2.5 mb-2"
+              >
+                Delete Item
+              </button>
             )}
           </div>
         </div>
