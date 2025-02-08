@@ -1,0 +1,4 @@
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/sdt9850/public_html/Mavs_Mart
+    - /bin/cp -r build/* $DEPLOYPATH
