@@ -39,19 +39,23 @@ const BuyPage = () => {
       setLoading(true);
       const token = await user.getIdToken(); // Get Firebase token
 
-     
-
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Fetch items
-      const ItemsData = await axios.get("http://localhost:5002/api/items", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const ItemsData = await axios.get(
+        "http://44.203.114.198:5002/api/items",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       // Fetch all user data
-      const UserData = await axios.get("http://localhost:5002/api/UserData", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const UserData = await axios.get(
+        "http://44.203.114.198:5002/api/UserData",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       console.log("UserData:", UserData.data);
 
@@ -92,7 +96,7 @@ const BuyPage = () => {
       const token = await auth.currentUser.getIdToken();
 
       const response = await axios.delete(
-        `http://localhost:5002/api/items/${itemId}`,
+        `http://44.203.114.198:5002/api/items/${itemId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
