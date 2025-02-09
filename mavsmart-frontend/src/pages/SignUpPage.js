@@ -59,7 +59,7 @@ const SignupPage = () => {
       };
 
       // Save user data in MongoDB via backend API
-      const response = await fetch("http://44.203.114.198:5002/api/UserData", {
+      const response = await fetch("http://mavsmart.uta.cloud/api/UserData", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),
