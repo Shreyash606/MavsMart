@@ -32,7 +32,7 @@ async function connectToMongoDBAndStartServer() {
     console.log("✅ Connected to MongoDB");
 
     mongoDB = client.db("Mavs_User");
-    app.listen(port, () => {
+    app.listen(port, "0.0.0.0", () => {
       console.log(`🚀 Server running on port ${port}`);
     });
   } catch (err) {
