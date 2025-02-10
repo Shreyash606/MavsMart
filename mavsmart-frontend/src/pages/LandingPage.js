@@ -44,10 +44,10 @@ const LandingPage = () => {
       <LandingHeader />
       <main className="bg-[#ebedf0] flex-grow flex items-center justify-center text-center">
         <div>
-          <h1 className="text-7xl font-bold text-gray-800">
+          <h1 className="text-5xl font-bold text-gray-800 sm:text-6xl lg:text-7xl">
             Welcome to <span className="text-[#0064b1]">Mavs</span>Mart!
           </h1>
-          <p className="mt-4 text-4xl text-gray-800">
+          <p className="mt-4 text-2xl text-gray-800 sm:text-3xl lg:text-4xl">
             {/*The ultimate platform for Mavs to buy and sell items.*/}
             Simplifying life for every Maverick!
           </p>

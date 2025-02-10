@@ -113,7 +113,7 @@ const MainHeader = () => {
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className="w-8 h-8 "
+            className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8"
           >
             <path
               strokeLinecap="round"
@@ -121,7 +121,7 @@ const MainHeader = () => {
               d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
             />
           </svg>
-          <h1 className="text-4xl font-bold text-[#0064b1] font-sans-serif">
+          <h1 className="text-2xl font-bold text-[#0064b1] font-sans-serif sm:text-3xl lg:text-4xl">
             <Link to="/">MavsMart</Link>
           </h1>
         </div>
@@ -180,7 +180,7 @@ const MainHeader = () => {
           ) : (
             <button
               type="button"
-              className="text-white bg-[#0064b1] hover:bg-slate-500 hover:text-black focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center me-2"
+              className="text-white bg-[#0064b1] hover:bg-slate-500 hover:text-black focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-2.5 py-2 text-center inline-flex items-center me-2 lg:px-5 lg:py-2.5"
             >
               <Link to="/login">Login</Link>
             </button>
