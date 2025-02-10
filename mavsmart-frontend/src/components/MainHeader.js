@@ -54,7 +54,7 @@ const MainHeader = () => {
 
           // Fetch user data from your backend
           const response = await fetch(
-            "http://mavsmart.uta.cloud/api/UserData",
+            "http://44.203.114.198:5002/api/UserData",
             {
               method: "GET",
               headers: {

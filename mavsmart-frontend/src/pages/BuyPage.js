@@ -43,7 +43,7 @@ const BuyPage = () => {
 
       // Fetch items
       const ItemsData = await axios.get(
-        "http://mavsmart.uta.cloud/api/items",
+        "http://44.203.114.198:5002/api/items",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -51,7 +51,7 @@ const BuyPage = () => {
 
       // Fetch all user data
       const UserData = await axios.get(
-        "http://mavsmart.uta.cloud/api/UserData",
+        "http://44.203.114.198:5002/api/UserData",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -96,7 +96,7 @@ const BuyPage = () => {
       const token = await auth.currentUser.getIdToken();
 
       const response = await axios.delete(
-        `http://mavsmart.uta.cloud/api/items/${itemId}`,
+        `http://44.203.114.198:5002/api/items/${itemId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

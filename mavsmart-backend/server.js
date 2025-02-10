@@ -43,8 +43,7 @@ async function connectToMongoDBAndStartServer() {
 
 connectToMongoDBAndStartServer();
 
-app.use(cors({ origin: "https://mavsmart.uta.cloud", credentials: true }));
-
+app.use(cors());
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads")); // Serve uploaded files
 
