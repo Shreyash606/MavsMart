@@ -47,6 +47,10 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads")); // Serve uploaded files
 
+app.get("/", (req, res) => {
+  res.send("Welcome to the API!");
+});
+
 // Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
