@@ -92,7 +92,7 @@ const LoginPage = () => {
       </div>
 
       <div className="flex-grow flex items-center justify-center">
-        <div className="w-2/3 bg-white rounded-lg shadow dark:border sm:max-w-md xl:p-0">
+        <div className="w-5/6 bg-white rounded-lg shadow dark:border sm:max-w-md xl:p-0">
           <div className="p-6 space-y-6 md:space-y-8 sm:p-8">
             <h1 className="text-2xl font-bold text-center text-gray-900 md:text-3xl">
               Welcome Back to <span className="text-[#0064b1]">Mavs</span>Mart!
