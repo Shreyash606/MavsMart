@@ -92,7 +92,7 @@ const LoginPage = () => {
       </div>
 
       <div className="flex-grow flex items-center justify-center">
-        <div className="w-full bg-white rounded-lg shadow dark:border sm:max-w-md xl:p-0">
+        <div className="w-2/3 bg-white rounded-lg shadow dark:border sm:max-w-md xl:p-0">
           <div className="p-6 space-y-6 md:space-y-8 sm:p-8">
             <h1 className="text-2xl font-bold text-center text-gray-900 md:text-3xl">
               Welcome Back to <span className="text-[#0064b1]">Mavs</span>Mart!
@@ -136,13 +136,15 @@ const LoginPage = () => {
               </div>
 
               {/* Login button */}
-              <button
-                type="submit"
-                className="w-full text-white bg-[#0064b1] hover:bg-[#005599] focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
-                disabled={loading}
-              >
-                {loading ? "Signing In..." : "Sign In"}
-              </button>
+              <div className="flex justify-center">
+                <button
+                  type="submit"
+                  className="text-white bg-[#0064b1] hover:bg-[#005599] focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+                  disabled={loading}
+                >
+                  {loading ? "Signing In..." : "Sign In"}
+                </button>
+              </div>
 
               <p className="text-sm text-center text-gray-500">
                 Don’t have an account yet?{" "}
