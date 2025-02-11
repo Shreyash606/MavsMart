@@ -51,10 +51,6 @@ app.get("/api", (req, res) => {
   res.send("Welcome to the API!");
 });
 
-app.get("/test", (req, res) => {
-  res.json({ message: "API is working!" });
-});
-
 // Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
