@@ -13,10 +13,6 @@ jobs:
 
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v0.1.10
-<<<<<<< HEAD
-=======
-
->>>>>>> 2f839d481fa76c34aedbdf3dc3c9e3f9c1ad823c
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
