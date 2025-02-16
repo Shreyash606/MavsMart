@@ -50,6 +50,7 @@ app.use("/uploads", express.static("uploads")); // Serve uploaded files
 app.get("/api", (req, res) => {
   res.send("Welcome to the API!");
 });
+console.log("Welcome to the API!");
 
 app.get("/", (req, res) => {
   res.send("Welcome to the API!");
