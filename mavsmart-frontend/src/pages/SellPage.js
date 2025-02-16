@@ -151,7 +151,7 @@ const SellPage = () => {
       }
 
       const token = await user.getIdToken();
-      const response = await fetch("https://44.203.114.198:5002/api/items", {
+      const response = await fetch("https://mavsmart.uta.cloud/api/items", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formDataToSend,
