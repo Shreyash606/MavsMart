@@ -43,16 +43,20 @@ async function connectToMongoDBAndStartServer() {
 
 connectToMongoDBAndStartServer();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "https://mavsmart.uta.cloud", // Allow your frontend domain
+    methods: ["GET", "POST", "PUT", "DELETE"], // Allow relevant methods
+    allowedHeaders: ["Content-Type", "Authorization"], // Allow headers
+  })
+);
+
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads")); // Serve uploaded files
 
 app.get("/api", (req, res) => {
   res.send("Welcome to the API!");
 });
-
-
-
 
 // Configure multer storage
 const storage = multer.diskStorage({

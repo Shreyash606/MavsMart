@@ -54,7 +54,7 @@ const MainHeader = () => {
 
           // Fetch user data from your backend
           const response = await fetch(
-            "http://44.203.114.198:5002/api/UserData",
+            "https://44.203.114.198:5002/api/UserData",
             {
               method: "GET",
               headers: {
@@ -108,7 +108,7 @@ const MainHeader = () => {
         {/* Show MavsMart logo on all pages */}
         <div className="flex flex-row items-center space-x-3">
           <svg
-            xmlns="http://www.w3.org/2000/svg"
+            xmlns="https://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
