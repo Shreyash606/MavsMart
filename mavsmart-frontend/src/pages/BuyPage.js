@@ -42,14 +42,20 @@ const BuyPage = () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Fetch items
-      const ItemsData = await axios.get("/api/items", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const ItemsData = await axios.get(
+        "http://44.203.114.198:5002/api/items",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       // Fetch all user data
-      const UserData = await axios.get("/api/UserData", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const UserData = await axios.get(
+        "http://44.203.114.198:5002/api/UserData",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       console.log("UserData:", UserData.data);
 
@@ -89,9 +95,12 @@ const BuyPage = () => {
     try {
       const token = await auth.currentUser.getIdToken();
 
-      const response = await axios.delete(`/api/items/${itemId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.delete(
+        `http://44.203.114.198:5002/api/items/${itemId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.status === 200) {
         setItems((prevItems) =>

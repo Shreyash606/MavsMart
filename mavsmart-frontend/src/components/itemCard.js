@@ -5,7 +5,7 @@ import { auth } from "../Authentication/firebase-config";
 const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
   const [showContact, setShowContact] = useState(false);
   const imageUrl = item.photo
-    ? `uploads/${item.photo.filename}`
+    ? `http://44.203.114.198:5002/uploads/${item.photo.filename}`
     : "/placeholder-image.jpg";
 
   const handleBuyClick = () => {
