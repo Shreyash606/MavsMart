@@ -13,7 +13,7 @@ const LoginPage = () => {
 
   // Utility function for displaying toast messages
   const showToastMessage = (message, type) => {
-    const id = Date.now(); // Unique ID for each toastz
+    const id = Date.now(); // Unique ID for each toast
     setShowToast((prevToasts) => [...prevToasts, { id, message, type }]);
     setTimeout(() => {
       setShowToast((prevToasts) =>

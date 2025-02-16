@@ -5,7 +5,7 @@ import { auth } from "../Authentication/firebase-config";
 const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
   const [showContact, setShowContact] = useState(false);
   const imageUrl = item.photo
-    ? `http://44.203.114.198:5002/uploads/${item.photo.filename}`
+    ? `https://44.203.114.198:5002/uploads/${item.photo.filename}`
     : "/placeholder-image.jpg";
 
   const handleBuyClick = () => {
@@ -80,7 +80,7 @@ const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
                 <button
                   onClick={() =>
                     window.open(
-                      `https://wa.me/${item.sellerPhone.replace(/\D/g, "")}`,
+                      `http://wa.me/${item.sellerPhone.replace(/\D/g, "")}`,
                       "_blank"
                     )
                   }
