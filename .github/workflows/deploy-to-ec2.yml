@@ -1,39 +1,34 @@
-name: Deploy to EC2
+- name: Deploy to EC2 via SSH
+  uses: appleboy/ssh-action@v0.1.10
+  with:
+    host: ${{ secrets.EC2_HOST }}
+    username: ubuntu
+    key: ${{ secrets.EC2_SSH_KEY }}
+    script: |
+      cd ~/MavsMart/mavsmart-backend
+      git fetch --all
+      git reset --hard origin/master
 
-on:
-  push:
-    branches: [master] # Change to 'master' if your repo uses master
+      # Create a .env file using GitHub Secrets
+      echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" > .env
+      echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+      echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
+      echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> .env
+      echo "PORT=5002" >> .env
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      # Install dependencies
+      if [ -f package.json ]; then
+        npm ci --production
+      fi
 
-      - name: Deploy to EC2 via SSH
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd ~/MavsMart/mavsmart-backend  # Ensure correct path
-            git pull origin master  # Change to master if needed
+      if [ -f requirements.txt ]; then
+        pip install -r requirements.txt
+      fi
 
-            # Install dependencies (choose only one: npm or pip)
-            if [ -f package.json ]; then
-              npm install --production
-            fi
+      # Ensure PM2 is installed
+      if ! command -v pm2 &> /dev/null; then
+        npm install -g pm2
+      fi
 
-            if [ -f requirements.txt ]; then
-              pip install -r requirements.txt
-            fi
-
-            # Ensure PM2 is installed
-            if ! command -v pm2 &> /dev/null; then
-              npm install -g pm2
-            fi
-
-            # Restart application
-            pm2 restart app || pm2 start app.js --name "app"
+      # Restart the application
+      pm2 restart app || pm2 start app.js --name "app"
