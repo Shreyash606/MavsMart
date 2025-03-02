@@ -2,48 +2,30 @@ name: Deploy to EC2
 
 on:
   push:
-    branches: [master] # Change if using a different branch
+    branches:
+      - master
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v2
 
-      - name: Deploy to EC2 via SSH
-        uses: appleboy/ssh-action@v0.1.10
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.5.3
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd ~/MavsMart/mavsmart-backend  # Ensure correct directory
-            git fetch --all
-            git reset --hard origin/master  # Force update to latest commit
+          ssh-private-key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
 
-            # Create .env file using GitHub Secrets
-            cat <<EOF > .env
-            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            AWS_REGION=${{ secrets.AWS_REGION }}
-            MONGO_URI=${{ secrets.MONGO_URI }}
-            PORT=5002
-            EOF
-
-            # Install dependencies (choose npm or pip based on your stack)
-            if [ -f package.json ]; then
-              npm ci --production
-            fi
-            if [ -f requirements.txt ]; then
-              pip install -r requirements.txt
-            fi
-
-            # Ensure PM2 is installed
-            if ! command -v pm2 &> /dev/null; then
-              npm install -g pm2
-            fi
-
-            # Restart the application with PM2
-            pm2 restart app || pm2 start app.js --name "app"
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << EOF
+            cd ~/MavsMart/MavsMart
+            git pull origin main
+            cd mavsmart-backend
+            npm install
+            pm2 restart backend
+            cd ../mavsmart-frontend
+            npm install
+            pm2 restart frontend
+          EOF
