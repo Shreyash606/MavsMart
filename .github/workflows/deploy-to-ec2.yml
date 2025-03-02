@@ -1,36 +1,49 @@
+name: Deploy to EC2
 
-- name: Deploy to EC2 via SSH
-  uses: appleboy/ssh-action@v0.1.10
-  with:
-    host: ${{ secrets.EC2_HOST }}
-    username: ubuntu
-    key: ${{ secrets.EC2_SSH_KEY }}
-    script: |
-      cd ~/MavsMart/mavsmart-backend
-      git fetch --all
-      git reset --hard origin/master
+on:
+  push:
+    branches: [master] # Change if using a different branch
 
-      # Create a .env file using GitHub Secrets
-      echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" > .env
-      echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
-      echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
-      echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> .env
-      echo "PORT=5002" >> .env
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-      # Install dependencies
-      if [ -f package.json ]; then
-        npm ci --production
-      fi
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      if [ -f requirements.txt ]; then
-        pip install -r requirements.txt
-      fi
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/MavsMart/mavsmart-backend  # Ensure correct directory
+            git fetch --all
+            git reset --hard origin/master  # Force update to latest commit
 
-      # Ensure PM2 is installed
-      if ! command -v pm2 &> /dev/null; then
-        npm install -g pm2
-      fi
+            # Create .env file using GitHub Secrets
+            cat <<EOF > .env
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            MONGO_URI=${{ secrets.MONGO_URI }}
+            PORT=5002
+            EOF
 
-      # Restart the application
-      pm2 restart app || pm2 start app.js --name "app"
+            # Install dependencies (choose npm or pip based on your stack)
+            if [ -f package.json ]; then
+              npm ci --production
+            fi
+            if [ -f requirements.txt ]; then
+              pip install -r requirements.txt
+            fi
 
+            # Ensure PM2 is installed
+            if ! command -v pm2 &> /dev/null; then
+              npm install -g pm2
+            fi
+
+            # Restart the application with PM2
+            pm2 restart app || pm2 start app.js --name "app"
