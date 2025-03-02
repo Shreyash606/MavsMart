@@ -4,9 +4,7 @@ import { auth } from "../Authentication/firebase-config";
 
 const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
   const [showContact, setShowContact] = useState(false);
-  const imageUrl = item.photo
-    ? `https://mavsmart.uta.cloud/uploads/${item.photo.filename}`
-    : "/placeholder-image.jpg";
+  
 
   const handleBuyClick = () => {
     if (!isLoggedIn) {
@@ -21,7 +19,7 @@ const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
       {/* Product Image */}
       <div className="basis-1/3 flex-shrink-0 overflow-hidden rounded-t-lg md:rounded-s-lg md:rounded-tr-none flex items-center justify-center bg-gray-100">
         <img
-          src={imageUrl}
+          src={item.photo}
           style={{ width: "300px", height: "300px" }}
           alt={item.title}
           className="w-full h-relative object-contain object-center p-1"

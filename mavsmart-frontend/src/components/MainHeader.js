@@ -53,15 +53,12 @@ const MainHeader = () => {
           const token = await user.getIdToken();
 
           // Fetch user data from your backend
-          const response = await fetch(
-            "https://44.203.114.198:5002/api/UserData",
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+          const response = await fetch("http://localhost:5002/api/UserData", {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
           if (response.ok) {
             const data = await response.json();

@@ -4,6 +4,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import ItemCard from "../components/itemCard";
 import MainHeader from "../components/MainHeader";
+import Toast from "../components/Toast";
 import Spinner from "../components/Spinner";
 
 const BuyPage = () => {
@@ -13,8 +14,19 @@ const BuyPage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Check if user is logged in
   const [loading, setLoading] = useState(true); // Loading state
   const [error, setError] = useState(""); // Error message
+  const [showToast, setShowToast] = useState([]); // Toast state
   const navigate = useNavigate();
   const auth = getAuth();
+
+  const showToastMessage = (message, type) => {
+    const id = Date.now(); // Unique ID for each toast
+    setShowToast((prevToasts) => [...prevToasts, { id, message, type }]);
+    setTimeout(() => {
+      setShowToast((prevToasts) =>
+        prevToasts.filter((toast) => toast.id !== id)
+      );
+    }, 3000);
+  };
 
   useEffect(() => {
     // Check user login status
@@ -42,20 +54,14 @@ const BuyPage = () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Fetch items
-      const ItemsData = await axios.get(
-        "https://mavsmart.uta.cloud/api/items",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const ItemsData = await axios.get("http://localhost:5002/api/items", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       // Fetch all user data
-      const UserData = await axios.get(
-        "https://mavsmart.uta.cloud/api/UserData",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const UserData = await axios.get("http://localhost:5002/api/UserData", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       console.log("UserData:", UserData.data);
 
@@ -96,7 +102,7 @@ const BuyPage = () => {
       const token = await auth.currentUser.getIdToken();
 
       const response = await axios.delete(
-        `https://mavsmart.uta.cloud/api/items/${itemId}`,
+        `http://localhost:5002/api/items/${itemId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -106,17 +112,32 @@ const BuyPage = () => {
         setItems((prevItems) =>
           prevItems.filter((item) => item._id !== itemId)
         );
-        alert("Item deleted successfully!");
+        showToastMessage("Item deleted successfully!", "success");
       }
     } catch (error) {
       console.error("Error deleting item:", error);
-      alert("Failed to delete the item. Please try again.");
+      showToastMessage("Failed to delete the item. Please try again.", "error");
     }
   };
 
   return (
     <div className="flex flex-col min-h-screen">
       <MainHeader />
+      <div className="fixed top-4 right-4 z-50">
+        {showToast.map((toast) => (
+          <Toast
+            key={toast.id}
+            id={toast.id}
+            message={toast.message}
+            type={toast.type}
+            onClose={() =>
+              setShowToast((prevToasts) =>
+                prevToasts.filter((t) => t.id !== toast.id)
+              )
+            }
+          />
+        ))}
+      </div>
       <div className="container mx-auto p-4">
         <h1 className="text-2xl font-bold mb-4">Buy Items</h1>
 

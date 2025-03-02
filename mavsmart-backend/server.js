@@ -1,13 +1,21 @@
 const express = require("express");
-const https = require("https");
-const fs = require("fs");
 const admin = require("firebase-admin");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const multer = require("multer");
+
 const path = require("path");
 const { MongoClient, ObjectId } = require("mongodb");
 require("dotenv").config(); // Load environment variables first
+const { S3Client } = require("@aws-sdk/client-s3");
+
+// Configure AWS S3
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
 
 // Initialize Firebase Admin SDK
 admin.initializeApp({
@@ -19,9 +27,7 @@ admin.initializeApp({
 const app = express();
 const port = 5002;
 
-const mongoUri =
-  process.env.MONGO_URI ||
-  "mongodb+srv://Mavs_User:d8CL42UtQKEYSlgv@cluster0.td6x8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const mongoUri = process.env.MONGO_URI;
 const client = new MongoClient(mongoUri);
 
 let mongoDB;
@@ -45,14 +51,25 @@ async function connectToMongoDBAndStartServer() {
 
 connectToMongoDBAndStartServer();
 
+app.use(cors());
+
+const allowedOrigins = [
+  "http://localhost:3000", // Allow local frontend
+  "https://mavsmart.uta.cloud", // Allow production frontend
+];
+
 app.use(
   cors({
-    origin: "https://mavsmart.uta.cloud", // Allow your frontend domain
-    methods: ["GET", "POST", "PUT", "DELETE"], // Allow relevant methods
-    allowedHeaders: ["Content-Type", "Authorization"], // Allow headers
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true, // Allow cookies and auth headers
   })
 );
-
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads")); // Serve uploaded files
 
@@ -60,32 +77,23 @@ app.get("/api", (req, res) => {
   res.send("Welcome to the API!");
 });
 
-// Configure multer storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "./uploads");
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(
-      null,
-      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
-    );
-  },
-});
+// Multer storage configuration for S3
+const multerS3 = require("multer-s3");
+const multer = require("multer");
 
 const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only image files are allowed!"), false);
-    }
-  },
+  storage: multerS3({
+    s3: s3, // Ensure this is the correct S3 client
+    bucket: "mavsmart-images",
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    acl: "public-read",
+    key: (req, file, cb) => {
+      const uniqueFilename = `${Date.now()}-${file.originalname}`;
+      cb(null, uniqueFilename);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max file size
 });
-
 // Middleware to authenticate Firebase tokens
 const authenticateUser = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -109,7 +117,13 @@ app.get("/api/items", authenticateUser, async (req, res) => {
   try {
     const itemsCollection = mongoDB.collection("items");
     const items = await itemsCollection.find({}).toArray();
-    res.status(200).json(items);
+
+    res.status(200).json(
+      items.map((item) => ({
+        ...item,
+        photo: item.photo || null, // Ensure S3 URL is returned
+      }))
+    );
   } catch (error) {
     console.error("Error fetching items:", error);
     res.status(500).json({ error: "Error fetching items" });
@@ -184,6 +198,9 @@ app.post(
   authenticateUser,
   upload.single("photo"),
   async (req, res) => {
+    console.log("Request Body:", req.body);
+    console.log("Uploaded File:", req.file);
+
     const { uid } = req.user;
     const {
       title,
@@ -195,17 +212,11 @@ app.post(
       uploadedBy,
     } = req.body;
 
-    // Get uploaded file details
-    const photo = req.file
-      ? {
-          filename: req.file.filename,
-          path: `/uploads/${req.file.filename}`,
-        }
-      : null;
-
     if (!title || !description || !price || !category || !usedDuration) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+
+    const photo = req.file ? req.file.location : null; // S3 file URL
 
     try {
       const itemsCollection = mongoDB.collection("items");
@@ -214,12 +225,7 @@ app.post(
         description,
         price: parseFloat(price),
         category,
-        photo: req.file
-          ? {
-              filename: req.file.filename,
-              path: `/uploads/${req.file.filename}`, // Set the path field
-            }
-          : null,
+        photo,
         sold: sold === "true",
         usedDuration,
         uploadedBy,
@@ -229,17 +235,12 @@ app.post(
 
       const result = await itemsCollection.insertOne(newItem);
       res.status(201).json({
+        message: "Item posted successfully",
         id: result.insertedId,
-        ...newItem,
-        // Include full URL for client access
-        photoUrl: photo
-          ? `${req.protocol}://${req.get("host")}${photo.path}`
-          : null,
+        photo: photo,
       });
     } catch (error) {
       console.error("Error saving item:", error);
-      // Cleanup uploaded file if DB operation fails
-      if (req.file) fs.promises.unlink(req.file.path).catch(console.error);
       res.status(500).json({ error: "Error saving item" });
     }
   }

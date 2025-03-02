@@ -10,14 +10,15 @@ const SellPage = () => {
   const auth = getAuth();
   const [loading, setLoading] = useState(false); // Track submission process
 
-  const [user, setUser] = useState(null); // Store user state
+  const [user, setUser] = useState(undefined);
+
   const [formData, setFormData] = useState({
     category: "",
 
     title: "",
     description: "",
     usedDuration: "",
-    uploadedBy: "",
+    // uploadedBy: "",
     price: "",
     sold: false, // Default to unsold
     photo: null,
@@ -38,14 +39,18 @@ const SellPage = () => {
   // Monitor authentication state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser); // Update user state
-      if (!currentUser) {
-        navigate("/login"); // Redirect to login if not logged in
+      setUser(currentUser);
+      if (currentUser === null) {
+        navigate("/login");
       }
     });
 
-    return () => unsubscribe(); // Clean up the listener
+    return () => unsubscribe();
   }, [auth, navigate]);
+
+  if (user === undefined) {
+    return <Spinner />; // Show a spinner while Firebase is determining auth status
+  }
 
   // Handle input field changes
   const handleChange = (e) => {
@@ -106,6 +111,7 @@ const SellPage = () => {
   // When submitting the form:
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Form data:", formData);
 
     // Client-side validation for required fields
     if (
@@ -151,19 +157,14 @@ const SellPage = () => {
       }
 
       const token = await user.getIdToken();
-      const response = await fetch("https://mavsmart.uta.cloud/api/items", {
+      const response = await fetch("http://localhost:5002/api/items", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formDataToSend,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error response from backend:", errorData);
-        throw new Error(
-          errorData.error || "Failed to submit the item. Please try again."
-        );
-      }
+      const responseData = await response.json(); // Parse JSON directly
+      console.log("Response Data:", responseData);
 
       showToastMessage("Item added successfully!", "success");
       setTimeout(() => {
@@ -316,7 +317,7 @@ const SellPage = () => {
             />
           </div> */}
 
-            {/* Sold */}
+            {/* Sold 
             <div>
               <label className="block font-medium mb-2">
                 Is the item sold?
@@ -331,7 +332,7 @@ const SellPage = () => {
                 />
                 <span className="ml-2">Mark as sold</span>
               </label>
-            </div>
+            </div> */}
 
             {/* Price */}
             <div>
@@ -345,8 +346,9 @@ const SellPage = () => {
                 value={formData.price}
                 onChange={handleChange}
                 required
-                placeholder="Enter the price"
+                placeholder="Enter price in USD"
                 className="border p-2 rounded w-full"
+                min="1" // Prevent negative values
               />
             </div>
 
