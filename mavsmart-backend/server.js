@@ -1,4 +1,6 @@
 const express = require("express");
+const https = require("https");
+const fs = require("fs");
 const admin = require("firebase-admin");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -51,6 +53,7 @@ async function connectToMongoDBAndStartServer() {
 
 connectToMongoDBAndStartServer();
 
+<<<<<<< HEAD
 app.use(cors());
 
 const allowedOrigins = [
@@ -70,6 +73,16 @@ app.use(
     credentials: true, // Allow cookies and auth headers
   })
 );
+=======
+app.use(
+  cors({
+    origin: "https://mavsmart.uta.cloud", // Allow your frontend domain
+    methods: ["GET", "POST", "PUT", "DELETE"], // Allow relevant methods
+    allowedHeaders: ["Content-Type", "Authorization"], // Allow headers
+  })
+);
+
+>>>>>>> f0223c290388733088b9090845e7f412685dd637
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads")); // Serve uploaded files
 
