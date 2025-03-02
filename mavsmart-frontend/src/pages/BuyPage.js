@@ -54,7 +54,7 @@ const BuyPage = () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Fetch items
-<<<<<<< HEAD
+
       const ItemsData = await axios.get("http://localhost:5002/api/items", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -63,22 +63,7 @@ const BuyPage = () => {
       const UserData = await axios.get("http://localhost:5002/api/UserData", {
         headers: { Authorization: `Bearer ${token}` },
       });
-=======
-      const ItemsData = await axios.get(
-        "https://mavsmart.uta.cloud/api/items",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
 
-      // Fetch all user data
-      const UserData = await axios.get(
-        "https://mavsmart.uta.cloud/api/UserData",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
->>>>>>> f0223c290388733088b9090845e7f412685dd637
 
       console.log("UserData:", UserData.data);
 
@@ -119,11 +104,8 @@ const BuyPage = () => {
       const token = await auth.currentUser.getIdToken();
 
       const response = await axios.delete(
-<<<<<<< HEAD
+
         `http://localhost:5002/api/items/${itemId}`,
-=======
-        `https://mavsmart.uta.cloud/api/items/${itemId}`,
->>>>>>> f0223c290388733088b9090845e7f412685dd637
         {
           headers: { Authorization: `Bearer ${token}` },
         }

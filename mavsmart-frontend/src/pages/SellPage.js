@@ -157,6 +157,7 @@ const SellPage = () => {
       }
 
       const token = await user.getIdToken();
+
       const response = await fetch("http://localhost:5002/api/items", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },

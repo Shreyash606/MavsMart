@@ -1,8 +1,9 @@
 const express = require("express");
+const https = require("https");
+const fs = require("fs");
 const admin = require("firebase-admin");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-
 
 const path = require("path");
 const { MongoClient, ObjectId } = require("mongodb");
@@ -71,6 +72,16 @@ app.use(
     credentials: true, // Allow cookies and auth headers
   })
 );
+
+app.use(
+  cors({
+    origin: "https://mavsmart.uta.cloud", // Allow your frontend domain
+    methods: ["GET", "POST", "PUT", "DELETE"], // Allow relevant methods
+    allowedHeaders: ["Content-Type", "Authorization"], // Allow headers
+  })
+);
+
+y;
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads")); // Serve uploaded files
 

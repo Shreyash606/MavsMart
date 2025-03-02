@@ -4,13 +4,11 @@ import { auth } from "../Authentication/firebase-config";
 
 const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
   const [showContact, setShowContact] = useState(false);
-<<<<<<< HEAD
-  
-=======
+
   const imageUrl = item.photo
     ? `https://mavsmart.uta.cloud/uploads/${item.photo.filename}`
     : "/placeholder-image.jpg";
->>>>>>> f0223c290388733088b9090845e7f412685dd637
+
 
   const handleBuyClick = () => {
     if (!isLoggedIn) {
