@@ -1,6 +1,7 @@
 // components/ItemCard.jsx
 import React, { useState } from "react";
 import { auth } from "../Authentication/firebase-config";
+import { TrashIcon } from "@heroicons/react/24/outline";
 
 const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
   const [showContact, setShowContact] = useState(false);
@@ -8,7 +9,6 @@ const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
   const imageUrl = item.photo
     ? `https://mavsmart.uta.cloud/uploads/${item.photo.filename}`
     : "/placeholder-image.jpg";
-
 
   const handleBuyClick = () => {
     if (!isLoggedIn) {
@@ -36,9 +36,22 @@ const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
       {/* Product Details - Now with dynamic height */}
       <div className="flex flex-col md:basis-2/3 justify-between p-4 md:p-6 min-w-0 flex-1 min-h-[200px]">
         <div className="min-w-0">
-          <h5 className="mb-2 text-xl md:text-2xl font-bold text-gray-900 truncate">
-            {item.title}
-          </h5>
+          <div className="flex justify-between text-xs md:text-sm text-gray-500 gap-2">
+            <h5 className="mb-2 text-xl md:text-2xl font-bold text-gray-900 truncate">
+              {item.title}
+            </h5>
+            {/* Delete Button */}
+            {isLoggedIn && item.uploadedBy === auth.currentUser.displayName && (
+              <TrashIcon
+                type="button"
+                onClick={() => handleDelete(item._id)} // Call delete handler
+                className="w-6 h-6 text-gray-500 hover:text-red-500 cursor-pointer"
+              
+                
+              />
+            )}
+          </div>
+
           <p className="mb-3 text-sm md:text-base text-gray-600 line-clamp-2 overflow-hidden">
             {item.description}
           </p>
@@ -60,12 +73,12 @@ const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
           </div>
 
           {/* Conditional Buttons */}
-          <div className="transition-all duration-300 flex flex-col justify-end">
+          <div className="transition-all duration-300 flex justify-end">
             {!showContact ? (
               <button
                 type="button"
                 onClick={handleBuyClick}
-                className="text-white bg-[#0064b1] hover:bg-slate-500 hover:text-black focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 mb-2"
+                className="text-white w-32 bg-[#0064b1] hover:bg-slate-500 hover:text-black focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 mb-2"
               >
                 Buy Now
               </button>
@@ -75,9 +88,9 @@ const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
                   onClick={() =>
                     window.open(`mailto:${item.sellerEmail}`, "_self")
                   }
-                  className="text-white bg-[#0064b1] hover:bg-slate-500 hover:text-black focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 mb-2"
+                  className="text-white w-32 bg-[#0064b1] hover:bg-slate-500 hover:text-black focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 mb-2"
                 >
-                  Email Seller
+                  Email
                 </button>
                 <button
                   onClick={() =>
@@ -86,23 +99,14 @@ const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
                       "_blank"
                     )
                   }
-                  className="text-white bg-[#0064b1] hover:bg-slate-500 hover:text-black focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 mb-2"
+                  className="text-white w-32 bg-[#0064b1] hover:bg-slate-500 hover:text-black focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 mb-2"
                 >
-                  WhatsApp Seller
+                  WhatsApp
                 </button>
               </div>
             )}
 
-            {/* Delete Button */}
-            {isLoggedIn && item.uploadedBy === auth.currentUser.displayName && (
-              <button
-                type="button"
-                onClick={() => handleDelete(item._id)} // Call delete handler
-                className="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-200 font-medium rounded-lg text-sm px-5 py-2.5 mb-2"
-              >
-                Delete Item
-              </button>
-            )}
+            
           </div>
         </div>
       </div>
