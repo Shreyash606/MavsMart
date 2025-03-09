@@ -72,7 +72,7 @@ app.use(
     credentials: true, // Allow cookies and auth headers
   })
 );
-
+// 
 app.use(
   cors({
     origin: "https://mavsmart.uta.cloud", // Allow your frontend domain
