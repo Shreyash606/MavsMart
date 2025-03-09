@@ -81,7 +81,6 @@ app.use(
   })
 );
 
-y;
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads")); // Serve uploaded files
 
