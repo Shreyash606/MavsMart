@@ -25,6 +25,8 @@ const MainHeader = () => {
   };
 
   // Generate background color based on name
+
+  // Generate background color based on name
   const generateBackgroundColor = (name) => {
     if (!name) return "#0064b1"; // Default color
 
