@@ -7,7 +7,7 @@ const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
   const [showContact, setShowContact] = useState(false);
 
   const imageUrl = item.photo
-    ? `https://mavsmart.uta.cloud/uploads/${item.photo.filename}`
+    ? `https://api.mavsmart.uta.cloud/uploads/${item.photo.filename}`
     : "/placeholder-image.jpg";
 
   const handleBuyClick = () => {
@@ -46,8 +46,6 @@ const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
                 type="button"
                 onClick={() => handleDelete(item._id)} // Call delete handler
                 className="w-6 h-6 text-gray-500 hover:text-red-500 cursor-pointer"
-              
-                
               />
             )}
           </div>
@@ -105,8 +103,6 @@ const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
                 </button>
               </div>
             )}
-
-            
           </div>
         </div>
       </div>
