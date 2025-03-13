@@ -27,7 +27,7 @@ admin.initializeApp({
 });
 
 const app = express();
-const port = 80;
+const port = 5002;
 
 const mongoUri = process.env.MONGO_URI;
 const client = new MongoClient(mongoUri);
