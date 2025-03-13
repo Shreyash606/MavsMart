@@ -60,11 +60,14 @@ const SignupPage = () => {
 
       // Save user data in MongoDB via backend API
 
-      const response = await fetch("https://mavsmart.uta.cloud/api/UserData", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
-      });
+      const response = await fetch(
+        "https://api.mavsmart.uta.cloud/api/UserData",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userData),
+        }
+      );
 
       if (!response.ok) throw new Error("Failed to save user data");
 
