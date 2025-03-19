@@ -20,6 +20,8 @@ const s3 = new S3Client({
 });
 
 // Initialize Firebase Admin SDK
+
+// Initialize Firebase Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert(
     require("../mavsmart-backend/API Key.json")
