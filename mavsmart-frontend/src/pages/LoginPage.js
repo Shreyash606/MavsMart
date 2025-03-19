@@ -29,7 +29,7 @@ const LoginPage = () => {
     // Check if the email is from the allowed domain
     if (!email.endsWith("@mavs.uta.edu")) {
       showToastMessage(
-        "Login with your UTA email address only. Please try again.",
+        "Login with your mavs.uta.edu email address only. Please try again.",
         "error"
       );
       setLoading(false);
@@ -44,10 +44,12 @@ const LoginPage = () => {
         password
       );
       const user = userCredential.user;
+      // Get the Firebase ID token
+      const idToken = await user.getIdToken();
 
       // Store user info securely (use sessionStorage for session-based storage)
       sessionStorage.setItem("isLoggedIn", "true");
-      sessionStorage.setItem("token", user.accessToken);
+      sessionStorage.setItem("token", idToken);
 
       showToastMessage(
         "Login successful! Welcome back to MavsMart.",

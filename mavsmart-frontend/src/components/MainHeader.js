@@ -57,7 +57,7 @@ const MainHeader = () => {
           // Fetch user data from your backend
 
           const response = await fetch(
-            "https://api.mavsmart.uta.cloud/api/UserData",
+            "http://api.mavsmart.uta.cloud/api/UserData",
             {
               method: "GET",
               headers: {
@@ -111,7 +111,7 @@ const MainHeader = () => {
         {/* Show MavsMart logo on all pages */}
         <div className="flex flex-row items-center space-x-3">
           <svg
-            xmlns="https://www.w3.org/2000/svg"
+            xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
