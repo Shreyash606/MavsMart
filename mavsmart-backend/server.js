@@ -55,10 +55,8 @@ async function connectToMongoDBAndStartServer() {
 
 connectToMongoDBAndStartServer();
 
-app.use(cors());
-
 const allowedOrigins = [
-  "http://localhost:3000", // Allow local frontend
+  "https://localhost:3000", // Allow local frontend
   "https://mavsmart.uta.cloud", // Allow production frontend
 ];
 
@@ -71,14 +69,9 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: true, // Allow cookies and auth headers
-  })
-);
-app.use(
-  cors({
-    origin: "https://mavsmart.uta.cloud", // Allow your frontend domain
     methods: ["GET", "POST", "PUT", "DELETE"], // Allow relevant methods
     allowedHeaders: ["Content-Type", "Authorization"], // Allow headers
+    credentials: true, // Allow cookies and auth headers
   })
 );
 
