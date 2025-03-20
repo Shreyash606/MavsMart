@@ -93,7 +93,7 @@ const ItemCard = ({ item, isLoggedIn, navigate, handleDelete }) => {
                 <button
                   onClick={() =>
                     window.open(
-                      `http://wa.me/${item.sellerPhone.replace(/\D/g, "")}`,
+                      `https://wa.me/${item.sellerPhone.replace(/\D/g, "")}`,
                       "_blank"
                     )
                   }
