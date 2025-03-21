@@ -62,13 +62,7 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: "https://mavsmart.uta.cloud", // Allow only production frontend
     methods: ["GET", "POST", "PUT", "DELETE"], // Allow relevant methods
     allowedHeaders: ["Content-Type", "Authorization"], // Allow headers
     credentials: true, // Allow cookies and auth headers
