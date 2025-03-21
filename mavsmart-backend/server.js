@@ -31,13 +31,7 @@ admin.initializeApp({
 const app = express();
 const port = 5002;
 
-// Serve static files from the React app's build folder
-app.use(express.static(path.join(__dirname, "mavsmart-frontend/build")));
 
-// Handle client-side routing
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "mavsmart-frontend/build", "index.html"));
-});
 
 const mongoUri = process.env.MONGO_URI;
 const client = new MongoClient(mongoUri);
