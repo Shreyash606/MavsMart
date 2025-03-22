@@ -167,7 +167,7 @@ const BuyPage = () => {
                 id="category"
                 value={category}
                 onChange={handleCategoryChange}
-                className="border p-2 rounded bg-[#0064b1] text-white"
+                className="border p-2 rounded bg-[#0064b1] text-white w-full sm:w-1/2 lg:w-1/3"
               >
                 <option value="All">All</option>
                 <option value="Laptop">Laptop</option>
