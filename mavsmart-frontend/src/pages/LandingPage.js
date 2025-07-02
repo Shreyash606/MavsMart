@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  ShoppingBag,
   TrendingUp,
   Shield,
   Users,
   Star,
   ArrowRight,
   CheckCircle,
+  ShoppingBag,
 } from "lucide-react";
+import MainHeader from "../components/MainHeader"; // Import your MainHeader component
 
 const RevampedLandingPage = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setIsVisible(true);
@@ -54,45 +57,31 @@ const RevampedLandingPage = () => {
     },
   ];
 
+  // Navigation handlers
+  const handleStartShopping = () => {
+    navigate("/buy");
+  };
+
+  const handleListItem = () => {
+    navigate("/sell");
+  };
+
+  const handleGetStarted = () => {
+    navigate("/signup");
+  };
+
+  const handleBrowseItems = () => {
+    navigate("/buy");
+  };
+
+  const handleSellItem = () => {
+    navigate("/sell");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50">
-      {/* Header */}
-      <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <ShoppingBag className="w-8 h-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-800">MavsMart</span>
-          </div>
-          <nav className="hidden md:flex space-x-8">
-            <a
-              href="#"
-              className="text-gray-600 hover:text-blue-600 transition"
-            >
-              How it Works
-            </a>
-            <a
-              href="#"
-              className="text-gray-600 hover:text-blue-600 transition"
-            >
-              Safety
-            </a>
-            <a
-              href="#"
-              className="text-gray-600 hover:text-blue-600 transition"
-            >
-              Support
-            </a>
-          </nav>
-          <div className="flex space-x-3">
-            <button className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">
-              Sign In
-            </button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-              Join Now
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Use MainHeader component instead of duplicate header */}
+      <MainHeader />
 
       {/* Hero Section */}
       <section className="container mx-auto px-6 py-16 lg:py-24">
@@ -119,11 +108,17 @@ const RevampedLandingPage = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center">
+              <button
+                onClick={handleStartShopping}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center"
+              >
                 Start Shopping
                 <ArrowRight className="w-5 h-5 ml-2" />
               </button>
-              <button className="border-2 border-gray-300 hover:border-blue-600 text-gray-700 hover:text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg transition-all">
+              <button
+                onClick={handleListItem}
+                className="border-2 border-gray-300 hover:border-blue-600 text-gray-700 hover:text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg transition-all"
+              >
                 List Your Item
               </button>
             </div>
@@ -156,7 +151,12 @@ const RevampedLandingPage = () => {
                     <h3 className="font-semibold text-gray-800">
                       Popular Items
                     </h3>
-                    <span className="text-blue-600 text-sm">View All</span>
+                    <button
+                      onClick={handleBrowseItems}
+                      className="text-blue-600 text-sm hover:text-blue-700 transition-colors"
+                    >
+                      View All
+                    </button>
                   </div>
 
                   <div className="space-y-3">
@@ -167,7 +167,8 @@ const RevampedLandingPage = () => {
                     ].map((item, i) => (
                       <div
                         key={i}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={handleBrowseItems}
                       >
                         <span className="text-gray-700">{item}</span>
                         <CheckCircle className="w-5 h-5 text-green-500" />
@@ -253,7 +254,10 @@ const RevampedLandingPage = () => {
             Start buying and selling today. It's free to join and takes less
             than 2 minutes.
           </p>
-          <button className="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg">
+          <button
+            onClick={handleGetStarted}
+            className="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg"
+          >
             Get Started Now
           </button>
         </div>
@@ -276,19 +280,28 @@ const RevampedLandingPage = () => {
               <h3 className="font-semibold mb-4">Marketplace</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <a href="#" className="hover:text-white transition">
+                  <button
+                    onClick={handleBrowseItems}
+                    className="hover:text-white transition text-left"
+                  >
                     Browse Items
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition">
+                  <button
+                    onClick={handleSellItem}
+                    className="hover:text-white transition text-left"
+                  >
                     Sell Item
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition">
+                  <button
+                    onClick={handleBrowseItems}
+                    className="hover:text-white transition text-left"
+                  >
                     Categories
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -296,19 +309,19 @@ const RevampedLandingPage = () => {
               <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <a href="#" className="hover:text-white transition">
+                  <button className="hover:text-white transition text-left">
                     Help Center
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition">
+                  <button className="hover:text-white transition text-left">
                     Safety Tips
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition">
+                  <button className="hover:text-white transition text-left">
                     Contact Us
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -316,19 +329,19 @@ const RevampedLandingPage = () => {
               <h3 className="font-semibold mb-4">Legal</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <a href="#" className="hover:text-white transition">
+                  <button className="hover:text-white transition text-left">
                     Terms of Service
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition">
+                  <button className="hover:text-white transition text-left">
                     Privacy Policy
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition">
+                  <button className="hover:text-white transition text-left">
                     Community Guidelines
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
