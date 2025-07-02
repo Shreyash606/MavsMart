@@ -17,14 +17,14 @@ import Toast from "../components/Toast";
 import Spinner from "../components/Spinner";
 
 const BuyPage = () => {
-  const [items, setItems] = useState([]); // Items fetched from the database
-  const [category, setCategory] = useState("All"); // Filter by category
-  const [searchTerm, setSearchTerm] = useState(""); // Search functionality
-  const [viewMode, setViewMode] = useState("grid"); // Grid or list view
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Check if user is logged in
-  const [loading, setLoading] = useState(true); // Loading state
-  const [error, setError] = useState(""); // Error message
-  const [showToast, setShowToast] = useState([]); // Toast state
+  const [items, setItems] = useState([]);
+  const [category, setCategory] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState("grid");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showToast, setShowToast] = useState([]);
   const navigate = useNavigate();
   const auth = getAuth();
 
@@ -39,7 +39,7 @@ const BuyPage = () => {
   ];
 
   const showToastMessage = (message, type) => {
-    const id = Date.now(); // Unique ID for each toast
+    const id = Date.now();
     setShowToast((prevToasts) => [...prevToasts, { id, message, type }]);
     setTimeout(() => {
       setShowToast((prevToasts) =>
@@ -49,30 +49,28 @@ const BuyPage = () => {
   };
 
   useEffect(() => {
-    // Check user login status
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setIsLoggedIn(true);
-        fetchItems(user); // Fetch items when user is logged in
+        fetchItems(user);
       } else {
         setIsLoggedIn(false);
-        setItems([]); // Clear items if logged out
+        setItems([]);
         setLoading(false);
-        navigate("/login"); // Redirect to login if not authenticated
+        navigate("/login");
       }
     });
 
-    return () => unsubscribe(); // Clean up the listener
+    return () => unsubscribe();
   }, [auth, navigate]);
 
   const fetchItems = async (user) => {
     try {
       setLoading(true);
-      const token = await user.getIdToken(); // Get Firebase token
+      const token = await user.getIdToken();
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Fetch items
       const ItemsData = await axios.get(
         "https://api.mavsmart.uta.cloud/api/items",
         {
@@ -80,7 +78,6 @@ const BuyPage = () => {
         }
       );
 
-      // Fetch all user data
       const UserData = await axios.get(
         "https://api.mavsmart.uta.cloud/api/UserData",
         {
@@ -90,18 +87,17 @@ const BuyPage = () => {
 
       console.log("UserData:", UserData.data);
 
-      // Combine items and user data
       const combinedData = ItemsData.data.map((item) => {
-        const seller = UserData.data.find((user) => user.uid === item.userId); // Match `uid` with `uploadedBy`
+        const seller = UserData.data.find((user) => user.uid === item.userId);
         return {
           ...item,
-          sellerEmail: seller?.email || "N/A", // Add seller's email
-          sellerPhone: seller?.phoneNumber || "N/A", // Add seller's phone number
+          sellerEmail: seller?.email || "N/A",
+          sellerPhone: seller?.phoneNumber || "N/A",
         };
       });
 
-      console.log("Combined Data:", combinedData); // Debug: Check combined data
-      setItems(combinedData); // Update state
+      console.log("Combined Data:", combinedData);
+      setItems(combinedData);
     } catch (error) {
       console.error("Error fetching data:", error.response || error.message);
       setError("Failed to fetch items. Please try again later.");
@@ -111,7 +107,7 @@ const BuyPage = () => {
   };
 
   const handleCategoryChange = (selectedCategory) => {
-    setCategory(selectedCategory); // Update selected category
+    setCategory(selectedCategory);
   };
 
   const handleDelete = async (itemId) => {
@@ -137,7 +133,6 @@ const BuyPage = () => {
     }
   };
 
-  // Filter items by category and search term
   const filteredItems = items.filter((item) => {
     const matchesCategory =
       category === "All" ||
@@ -191,16 +186,17 @@ const BuyPage = () => {
         ))}
       </div>
 
-      <div className="container mx-auto px-4 py-6">
+      {/* Main Container with proper padding for small screens */}
+      <div className="container mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6">
         {/* Header Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-4 sm:space-y-0">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <ShoppingBag className="w-8 h-8 mr-3 text-blue-600" />
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
+                <ShoppingBag className="w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-blue-600" />
                 Marketplace
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">
                 Discover great deals from fellow Mavericks
               </p>
             </div>
@@ -213,7 +209,7 @@ const BuyPage = () => {
                     : "bg-white text-gray-600 hover:bg-gray-100"
                 }`}
               >
-                <Grid className="w-5 h-5" />
+                <Grid className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               <button
                 onClick={() => setViewMode("list")}
@@ -223,26 +219,30 @@ const BuyPage = () => {
                     : "bg-white text-gray-600 hover:bg-gray-100"
                 }`}
               >
-                <List className="w-5 h-5" />
+                <List className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
           </div>
 
           {/* Stats */}
-          <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-4 sm:space-x-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-xl sm:text-2xl font-bold text-blue-600">
                     {items.length}
                   </div>
-                  <div className="text-sm text-gray-600">Total Items</div>
+                  <div className="text-xs sm:text-sm text-gray-600">
+                    Total Items
+                  </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-xl sm:text-2xl font-bold text-green-600">
                     {filteredItems.length}
                   </div>
-                  <div className="text-sm text-gray-600">Available</div>
+                  <div className="text-xs sm:text-sm text-gray-600">
+                    Available
+                  </div>
                 </div>
               </div>
             </div>
@@ -251,34 +251,34 @@ const BuyPage = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center">
-            <AlertCircle className="w-5 h-5 text-red-500 mr-3" />
-            <span className="text-red-700">{error}</span>
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 flex items-center">
+            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mr-2 sm:mr-3 flex-shrink-0" />
+            <span className="text-red-700 text-sm sm:text-base">{error}</span>
           </div>
         )}
 
         {/* Search and Filter Section */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div className="grid md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6 mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <input
                 type="text"
                 placeholder="Search items..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
               />
             </div>
 
             {/* Category Filter */}
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <select
                 value={category}
                 onChange={(e) => handleCategoryChange(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white text-sm sm:text-base"
               >
                 {categories.map((cat) => (
                   <option key={cat.value} value={cat.value}>
@@ -289,13 +289,13 @@ const BuyPage = () => {
             </div>
           </div>
 
-          {/* Category Pills */}
-          <div className="flex flex-wrap gap-2 mt-4">
+          {/* Category Pills - Responsive scrolling on mobile */}
+          <div className="flex flex-wrap gap-1 sm:gap-2 mt-3 sm:mt-4 overflow-x-auto pb-2">
             {categories.map((cat) => (
               <button
                 key={cat.value}
                 onClick={() => handleCategoryChange(cat.value)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+                className={`px-2 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition whitespace-nowrap flex-shrink-0 ${
                   category === cat.value
                     ? "bg-blue-600 text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -308,24 +308,25 @@ const BuyPage = () => {
           </div>
         </div>
 
-        {/* Items Grid/List */}
+        {/* Items Grid/List - Fixed responsive grid */}
         {filteredItems.length > 0 ? (
           <div
-            className={`grid gap-6 ${
+            className={`grid gap-3 sm:gap-4 lg:gap-6 ${
               viewMode === "grid"
-                ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                 : "grid-cols-1"
             }`}
           >
             {filteredItems.map((item) => (
-              <ItemCard
-                key={item._id} // Use `_id` as the unique identifier from MongoDB
-                item={item}
-                isLoggedIn={isLoggedIn}
-                navigate={navigate} // Pass navigate for redirection
-                handleDelete={handleDelete} // Pass delete handler
-                viewMode={viewMode} // Pass view mode for different layouts
-              />
+              <div key={item._id} className="w-full min-w-0">
+                <ItemCard
+                  item={item}
+                  isLoggedIn={isLoggedIn}
+                  navigate={navigate}
+                  handleDelete={handleDelete}
+                  viewMode={viewMode}
+                />
+              </div>
             ))}
           </div>
         ) : (
@@ -348,16 +349,19 @@ const BuyPage = () => {
           </div>
         )}
 
-        {/* Quick Actions */}
-        <div className="fixed bottom-6 right-6">
+        {/* Quick Actions - Responsive positioning */}
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6">
           <button
             onClick={() => navigate("/sell")}
-            className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+            className="bg-blue-600 hover:bg-blue-700 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
             title="Sell an item"
           >
-            <Package className="w-6 h-6" />
+            <Package className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
+
+        {/* Bottom padding to account for fixed button */}
+        <div className="h-20 sm:h-24"></div>
       </div>
     </div>
   );
