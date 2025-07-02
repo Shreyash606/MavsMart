@@ -1,6 +1,4 @@
 const express = require("express");
-const https = require("https");
-const fs = require("fs");
 const admin = require("firebase-admin");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -11,64 +9,96 @@ const multerS3 = require("multer-s3");
 const { S3Client, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 require("dotenv").config();
 
-// Configure AWS S3
-const s3 = new S3Client({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// 🔧 DEBUGGING HELPERS
+const debug = {
+  log: (label, data) => {
+    console.log(`🔍 [${label}]`, JSON.stringify(data, null, 2));
   },
-});
+  error: (label, error) => {
+    console.error(`❌ [${label}]`, error);
+  },
+  success: (label, message) => {
+    console.log(`✅ [${label}]`, message);
+  },
+};
 
-// Initialize Firebase Admin SDK
-admin.initializeApp({
-  credential: admin.credential.cert(
-    require("../mavsmart-backend/API Key.json")
-  ),
-});
+// 🔧 ENVIRONMENT VALIDATION
+const validateEnvironment = () => {
+  const required = [
+    "MONGO_URI",
+    "AWS_REGION",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+  ];
+
+  const missing = required.filter((env) => !process.env[env]);
+
+  if (missing.length > 0) {
+    debug.error(
+      "ENVIRONMENT",
+      `Missing required environment variables: ${missing.join(", ")}`
+    );
+    process.exit(1);
+  }
+
+  debug.success("ENVIRONMENT", "All required environment variables found");
+};
+
+validateEnvironment();
+
+// 🔧 AWS S3 CONFIGURATION
+let s3;
+try {
+  s3 = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  });
+  debug.success("S3", "S3 client initialized successfully");
+} catch (error) {
+  debug.error("S3", "Failed to initialize S3 client");
+  debug.error("S3", error);
+}
+
+// 🔧 FIREBASE INITIALIZATION
+let firebaseInitialized = false;
+try {
+  // Check if Firebase is already initialized
+  if (admin.apps.length === 0) {
+    admin.initializeApp({
+      credential: admin.credential.cert(
+        require(path.join(__dirname, "API Key.json")) // Adjust path as needed
+      ),
+    });
+  }
+  firebaseInitialized = true;
+  debug.success("FIREBASE", "Firebase Admin initialized successfully");
+} catch (error) {
+  debug.error("FIREBASE", "Failed to initialize Firebase Admin");
+  debug.error("FIREBASE", error);
+}
 
 const app = express();
 const port = process.env.PORT || 5002;
 
-// MongoDB connection
-const mongoUri = process.env.MONGO_URI;
-const client = new MongoClient(mongoUri);
-let mongoDB;
-
-async function connectToMongoDBAndStartServer() {
-  try {
-    await client.connect();
-    await client.db("admin").command({ ping: 1 });
-    console.log("✅ Connected to MongoDB");
-
-    mongoDB = client.db("Mavs_User");
-
-    // Start server
-    app.listen(port, "0.0.0.0", () => {
-      console.log(`🚀 Server running on port ${port}`);
-    });
-  } catch (err) {
-    console.error("❌ MongoDB connection failed:", err);
-    process.exit(1);
-  }
-}
-
-// Enhanced CORS configuration
+// 🔧 CORS CONFIGURATION
 const allowedOrigins = [
   "http://localhost:3000",
   "https://localhost:3000",
   "https://mavsmart.uta.cloud",
-  "http://localhost:3001", // Add if you use different ports
+  "http://localhost:3001",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (mobile apps, etc.)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log(`🌐 CORS Origin: ${origin}`);
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        debug.error("CORS", `Origin ${origin} not allowed`);
         callback(new Error("Not allowed by CORS"));
       }
     },
@@ -78,18 +108,68 @@ app.use(
   })
 );
 
-// Enhanced middleware
+// 🔧 MIDDLEWARE
 app.use(bodyParser.json({ limit: "10mb" }));
 app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
 app.use("/uploads", express.static("uploads"));
 
 // Request logging middleware
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log(`📋 ${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log(`📋 Headers:`, req.headers);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log(`📋 Body:`, req.body);
+  }
   next();
 });
 
-// Enhanced multer configuration with better error handling
+// 🔧 MONGODB CONNECTION
+const mongoUri = process.env.MONGO_URI;
+const client = new MongoClient(mongoUri);
+let mongoDB;
+
+async function connectToMongoDBAndStartServer() {
+  try {
+    debug.log("MONGO", "Attempting to connect to MongoDB...");
+    debug.log(
+      "MONGO",
+      `Connection string: ${mongoUri.replace(/\/\/[^:]+:[^@]+@/, "//***:***@")}`
+    );
+
+    await client.connect();
+    await client.db("admin").command({ ping: 1 });
+
+    mongoDB = client.db("Mavs_User");
+    debug.success("MONGO", "Connected to MongoDB successfully");
+
+    // Test collections
+    try {
+      const collections = await mongoDB.listCollections().toArray();
+      debug.log(
+        "MONGO",
+        `Available collections: ${collections.map((c) => c.name).join(", ")}`
+      );
+    } catch (error) {
+      debug.error("MONGO", "Failed to list collections");
+    }
+
+    startServer();
+  } catch (err) {
+    debug.error("MONGO", "MongoDB connection failed");
+    debug.error("MONGO", err);
+    process.exit(1);
+  }
+}
+
+function startServer() {
+  app.listen(port, "0.0.0.0", () => {
+    debug.success("SERVER", `Server running on port ${port}`);
+    debug.log("SERVER", `Server URL: http://localhost:${port}`);
+    debug.log("SERVER", `API URL: http://localhost:${port}/api`);
+  });
+}
+
+// 🔧 MULTER CONFIGURATION
 const upload = multer({
   storage: multerS3({
     s3: s3,
@@ -97,10 +177,10 @@ const upload = multer({
     contentType: multerS3.AUTO_CONTENT_TYPE,
     acl: "public-read",
     key: (req, file, cb) => {
-      // Create organized folder structure
       const timestamp = Date.now();
       const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, "_");
       const uniqueFilename = `items/${timestamp}-${sanitizedName}`;
+      debug.log("UPLOAD", `Generated filename: ${uniqueFilename}`);
       cb(null, uniqueFilename);
     },
   }),
@@ -109,11 +189,12 @@ const upload = multer({
     files: 1,
   },
   fileFilter: (req, file, cb) => {
-    // Enhanced file type validation
+    debug.log("UPLOAD", `File type: ${file.mimetype}`);
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
+      debug.error("UPLOAD", `Invalid file type: ${file.mimetype}`);
       cb(
         new Error(
           "Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed."
@@ -123,120 +204,108 @@ const upload = multer({
   },
 });
 
-// Enhanced authentication middleware
+// 🔧 AUTHENTICATION MIDDLEWARE
 const authenticateUser = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({
-      error: "Unauthorized",
-      message: "Authorization header required",
-    });
-  }
-
-  const idToken = authHeader.split("Bearer ")[1];
-
   try {
+    const authHeader = req.headers.authorization;
+    debug.log(
+      "AUTH",
+      `Authorization header: ${authHeader ? "Present" : "Missing"}`
+    );
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      debug.error("AUTH", "No valid authorization header");
+      return res.status(401).json({
+        error: "Unauthorized",
+        message: "Authorization header required",
+      });
+    }
+
+    const idToken = authHeader.split("Bearer ")[1];
+    debug.log("AUTH", `Token length: ${idToken ? idToken.length : 0}`);
+
+    if (!firebaseInitialized) {
+      debug.error("AUTH", "Firebase not initialized");
+      return res.status(500).json({ error: "Firebase not initialized" });
+    }
+
     const decodedToken = await admin.auth().verifyIdToken(idToken);
+    debug.log("AUTH", `Decoded token for user: ${decodedToken.uid}`);
+
     req.user = decodedToken;
     next();
   } catch (error) {
-    console.error("Firebase Authentication error:", error);
+    debug.error("AUTH", "Token verification failed");
+    debug.error("AUTH", error);
     return res.status(403).json({
       error: "Invalid token",
-      message: "Please log in again",
+      message: error.message,
     });
   }
 };
 
-// Health check endpoint
-app.get("/api/health", (req, res) => {
-  res.status(200).json({
+// 🔧 HEALTH CHECK ENDPOINT
+app.get("/api/health", async (req, res) => {
+  const health = {
     status: "OK",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-  });
+    mongodb: "Unknown",
+    firebase: firebaseInitialized ? "OK" : "Failed",
+    s3: s3 ? "OK" : "Failed",
+  };
+
+  try {
+    await mongoDB.admin().ping();
+    health.mongodb = "OK";
+  } catch (error) {
+    health.mongodb = "Failed";
+  }
+
+  debug.log("HEALTH", health);
+  res.status(200).json(health);
 });
 
-// Root API endpoint
+// 🔧 ROOT ENDPOINT
 app.get("/api", (req, res) => {
   res.json({
-    message: "Welcome to MavsMart API!",
+    message: "🚀 MavsMart API is running!",
     version: "1.0.0",
-    documentation: "/api/docs",
+    endpoints: {
+      health: "/api/health",
+      items: "/api/items",
+      users: "/api/UserData",
+    },
   });
 });
 
-// Enhanced GET all items with filtering and pagination
+// 🔧 GET ALL ITEMS (with debugging)
 app.get("/api/items", authenticateUser, async (req, res) => {
   try {
-    const {
-      category,
-      minPrice,
-      maxPrice,
-      search,
-      page = 1,
-      limit = 50,
-      sortBy = "createdAt",
-      sortOrder = "desc",
-    } = req.query;
+    debug.log("ITEMS_GET", "Fetching items...");
+    debug.log("ITEMS_GET", `User: ${req.user.uid}`);
+
+    if (!mongoDB) {
+      debug.error("ITEMS_GET", "MongoDB not connected");
+      return res.status(500).json({ error: "Database not connected" });
+    }
 
     const itemsCollection = mongoDB.collection("items");
+    debug.log("ITEMS_GET", "Collection accessed");
 
-    // Build query
-    let query = { sold: { $ne: true } }; // Only show unsold items by default
+    const items = await itemsCollection.find({}).toArray();
+    debug.log("ITEMS_GET", `Found ${items.length} items`);
 
-    if (category && category !== "All") {
-      query.category = new RegExp(category, "i");
-    }
+    const processedItems = items.map((item) => ({
+      ...item,
+      photo: item.photo || null,
+    }));
 
-    if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = parseFloat(minPrice);
-      if (maxPrice) query.price.$lte = parseFloat(maxPrice);
-    }
-
-    if (search) {
-      query.$or = [
-        { title: new RegExp(search, "i") },
-        { description: new RegExp(search, "i") },
-      ];
-    }
-
-    // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Build sort object
-    const sort = {};
-    sort[sortBy] = sortOrder === "desc" ? -1 : 1;
-
-    // Execute query with pagination
-    const items = await itemsCollection
-      .find(query)
-      .sort(sort)
-      .skip(skip)
-      .limit(parseInt(limit))
-      .toArray();
-
-    // Get total count for pagination
-    const totalItems = await itemsCollection.countDocuments(query);
-    const totalPages = Math.ceil(totalItems / parseInt(limit));
-
-    res.status(200).json({
-      items: items.map((item) => ({
-        ...item,
-        photo: item.photo || null,
-      })),
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages,
-        totalItems,
-        hasNextPage: parseInt(page) < totalPages,
-        hasPrevPage: parseInt(page) > 1,
-      },
-    });
+    debug.success("ITEMS_GET", `Returning ${processedItems.length} items`);
+    res.status(200).json(processedItems);
   } catch (error) {
-    console.error("Error fetching items:", error);
+    debug.error("ITEMS_GET", "Failed to fetch items");
+    debug.error("ITEMS_GET", error);
     res.status(500).json({
       error: "Error fetching items",
       message: error.message,
@@ -244,54 +313,27 @@ app.get("/api/items", authenticateUser, async (req, res) => {
   }
 });
 
-// Get single item by ID
-app.get("/api/items/:id", authenticateUser, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const itemsCollection = mongoDB.collection("items");
-
-    const item = await itemsCollection.findOne({ _id: new ObjectId(id) });
-
-    if (!item) {
-      return res.status(404).json({ error: "Item not found" });
-    }
-
-    res.status(200).json({
-      ...item,
-      photo: item.photo || null,
-    });
-  } catch (error) {
-    console.error("Error fetching item:", error);
-    res.status(500).json({
-      error: "Error fetching item",
-      message: error.message,
-    });
-  }
-});
-
-// Enhanced GET all users
+// 🔧 GET ALL USERS (with debugging)
 app.get("/api/UserData", authenticateUser, async (req, res) => {
   try {
+    debug.log("USERS_GET", "Fetching users...");
+    debug.log("USERS_GET", `Requesting user: ${req.user.uid}`);
+
+    if (!mongoDB) {
+      debug.error("USERS_GET", "MongoDB not connected");
+      return res.status(500).json({ error: "Database not connected" });
+    }
+
     const usersCollection = mongoDB.collection("UserData");
-    const users = await usersCollection
-      .find(
-        {},
-        {
-          projection: {
-            _id: 1,
-            uid: 1,
-            name: 1,
-            email: 1,
-            avatar: 1,
-            createdAt: 1,
-          },
-        }
-      )
-      .toArray();
+    const users = await usersCollection.find({}).toArray();
+
+    debug.log("USERS_GET", `Found ${users.length} users`);
+    debug.success("USERS_GET", `Returning ${users.length} users`);
 
     res.status(200).json(users);
   } catch (error) {
-    console.error("Error fetching user data:", error);
+    debug.error("USERS_GET", "Failed to fetch users");
+    debug.error("USERS_GET", error);
     res.status(500).json({
       error: "Error fetching user data",
       message: error.message,
@@ -299,54 +341,35 @@ app.get("/api/UserData", authenticateUser, async (req, res) => {
   }
 });
 
-// Get user by UID
-app.get("/api/UserData/:uid", authenticateUser, async (req, res) => {
+// 🔧 POST NEW USER (with debugging)
+app.post("/api/UserData", async (req, res) => {
   try {
-    const usersCollection = mongoDB.collection("UserData");
-    const user = await usersCollection.findOne({ uid: req.params.uid });
+    debug.log("USER_POST", "Creating new user...");
+    debug.log("USER_POST", req.body);
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+    const { uid, name, email, phoneNumber, avatar } = req.body;
+
+    if (!uid || !name || !email || !phoneNumber) {
+      debug.error("USER_POST", "Missing required fields");
+      return res.status(400).json({
+        error: "Missing required fields",
+        required: ["uid", "name", "email", "phoneNumber"],
+      });
     }
 
-    res.status(200).json({
-      uid: user.uid,
-      name: user.name,
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-      avatar: user.avatar,
-      createdAt: user.createdAt,
-    });
-  } catch (error) {
-    console.error("Error fetching user data:", error);
-    res.status(500).json({
-      error: "Error fetching user data",
-      message: error.message,
-    });
-  }
-});
+    if (!email.endsWith("@mavs.uta.edu")) {
+      debug.error("USER_POST", `Invalid email domain: ${email}`);
+      return res.status(400).json({
+        error: "Invalid email domain",
+        message: "Only @mavs.uta.edu emails are allowed",
+      });
+    }
 
-// Enhanced POST user registration
-app.post("/api/UserData", async (req, res) => {
-  const { uid, name, email, phoneNumber, avatar } = req.body;
+    if (!mongoDB) {
+      debug.error("USER_POST", "MongoDB not connected");
+      return res.status(500).json({ error: "Database not connected" });
+    }
 
-  // Enhanced validation
-  if (!uid || !name || !email || !phoneNumber) {
-    return res.status(400).json({
-      error: "Missing required fields",
-      required: ["uid", "name", "email", "phoneNumber"],
-    });
-  }
-
-  // Email validation for UTA domain
-  if (!email.endsWith("@mavs.uta.edu")) {
-    return res.status(400).json({
-      error: "Invalid email domain",
-      message: "Only @mavs.uta.edu emails are allowed",
-    });
-  }
-
-  try {
     const usersCollection = mongoDB.collection("UserData");
 
     // Check if user already exists
@@ -355,6 +378,7 @@ app.post("/api/UserData", async (req, res) => {
     });
 
     if (existingUser) {
+      debug.error("USER_POST", `User already exists: ${uid}`);
       return res.status(409).json({
         error: "User already exists",
         message: "A user with this UID or email already exists",
@@ -373,6 +397,7 @@ app.post("/api/UserData", async (req, res) => {
     };
 
     const result = await usersCollection.insertOne(newUser);
+    debug.success("USER_POST", `User created with ID: ${result.insertedId}`);
 
     res.status(201).json({
       message: "User registered successfully",
@@ -384,7 +409,8 @@ app.post("/api/UserData", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error saving user:", error);
+    debug.error("USER_POST", "Failed to create user");
+    debug.error("USER_POST", error);
     res.status(500).json({
       error: "Error saving user details",
       message: error.message,
@@ -392,64 +418,84 @@ app.post("/api/UserData", async (req, res) => {
   }
 });
 
-// Enhanced POST new item
+// 🔧 POST NEW ITEM (with debugging)
 app.post(
   "/api/items",
   authenticateUser,
   upload.single("photo"),
   async (req, res) => {
-    console.log("Request Body:", req.body);
-    console.log("Uploaded File:", req.file);
-
-    const { uid } = req.user;
-    const {
-      title,
-      description,
-      price,
-      category,
-      sold,
-      usedDuration,
-      uploadedBy,
-    } = req.body;
-
-    // Enhanced validation
-    const requiredFields = {
-      title,
-      description,
-      price,
-      category,
-      usedDuration,
-      uploadedBy,
-    };
-    const missingFields = Object.entries(requiredFields)
-      .filter(([key, value]) => !value)
-      .map(([key]) => key);
-
-    if (missingFields.length > 0) {
-      return res.status(400).json({
-        error: "Missing required fields",
-        missingFields,
-      });
-    }
-
-    // Price validation
-    const parsedPrice = parseFloat(price);
-    if (isNaN(parsedPrice) || parsedPrice <= 0) {
-      return res.status(400).json({
-        error: "Invalid price",
-        message: "Price must be a positive number",
-      });
-    }
-
-    // Photo validation
-    if (!req.file) {
-      return res.status(400).json({
-        error: "Photo required",
-        message: "Please upload a photo of your item",
-      });
-    }
-
     try {
+      debug.log("ITEM_POST", "Creating new item...");
+      debug.log("ITEM_POST", `User: ${req.user.uid}`);
+      debug.log("ITEM_POST", `Body: ${JSON.stringify(req.body)}`);
+      debug.log("ITEM_POST", `File: ${req.file ? "Present" : "Missing"}`);
+
+      if (req.file) {
+        debug.log(
+          "ITEM_POST",
+          `File details: ${JSON.stringify({
+            originalname: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+            location: req.file.location,
+          })}`
+        );
+      }
+
+      const { uid } = req.user;
+      const {
+        title,
+        description,
+        price,
+        category,
+        sold,
+        usedDuration,
+        uploadedBy,
+      } = req.body;
+
+      // Validation
+      const requiredFields = {
+        title,
+        description,
+        price,
+        category,
+        usedDuration,
+        uploadedBy,
+      };
+      const missingFields = Object.entries(requiredFields)
+        .filter(([key, value]) => !value)
+        .map(([key]) => key);
+
+      if (missingFields.length > 0) {
+        debug.error("ITEM_POST", `Missing fields: ${missingFields.join(", ")}`);
+        return res.status(400).json({
+          error: "Missing required fields",
+          missingFields,
+        });
+      }
+
+      const parsedPrice = parseFloat(price);
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
+        debug.error("ITEM_POST", `Invalid price: ${price}`);
+        return res.status(400).json({
+          error: "Invalid price",
+          message: "Price must be a positive number",
+        });
+      }
+
+      if (!req.file) {
+        debug.error("ITEM_POST", "No photo uploaded");
+        return res.status(400).json({
+          error: "Photo required",
+          message: "Please upload a photo of your item",
+        });
+      }
+
+      if (!mongoDB) {
+        debug.error("ITEM_POST", "MongoDB not connected");
+        return res.status(500).json({ error: "Database not connected" });
+      }
+
       const itemsCollection = mongoDB.collection("items");
 
       const newItem = {
@@ -458,7 +504,7 @@ app.post(
         price: parsedPrice,
         category: category.trim(),
         photo: req.file.location,
-        photoKey: req.file.key, // Store S3 key for deletion
+        photoKey: req.file.key,
         sold: sold === "true" || sold === true,
         usedDuration: usedDuration.trim(),
         uploadedBy: uploadedBy.trim(),
@@ -469,7 +515,10 @@ app.post(
         isActive: true,
       };
 
+      debug.log("ITEM_POST", `New item: ${JSON.stringify(newItem, null, 2)}`);
+
       const result = await itemsCollection.insertOne(newItem);
+      debug.success("ITEM_POST", `Item created with ID: ${result.insertedId}`);
 
       res.status(201).json({
         message: "Item posted successfully",
@@ -482,9 +531,10 @@ app.post(
         },
       });
     } catch (error) {
-      console.error("Error saving item:", error);
+      debug.error("ITEM_POST", "Failed to create item");
+      debug.error("ITEM_POST", error);
 
-      // If item creation fails, clean up uploaded image
+      // Clean up uploaded image if item creation fails
       if (req.file && req.file.key) {
         try {
           await s3.send(
@@ -493,8 +543,9 @@ app.post(
               Key: req.file.key,
             })
           );
+          debug.log("ITEM_POST", "Cleaned up uploaded file");
         } catch (s3Error) {
-          console.error("Error cleaning up uploaded file:", s3Error);
+          debug.error("ITEM_POST", "Failed to cleanup uploaded file");
         }
       }
 
@@ -506,37 +557,47 @@ app.post(
   }
 );
 
-// Enhanced DELETE item with image cleanup
+// 🔧 DELETE ITEM (with debugging)
 app.delete("/api/items/:id", authenticateUser, async (req, res) => {
-  const { id } = req.params;
-  const { uid } = req.user;
-
   try {
+    const { id } = req.params;
+    const { uid } = req.user;
+
+    debug.log("ITEM_DELETE", `Deleting item ${id} for user ${uid}`);
+
+    if (!mongoDB) {
+      debug.error("ITEM_DELETE", "MongoDB not connected");
+      return res.status(500).json({ error: "Database not connected" });
+    }
+
     const itemsCollection = mongoDB.collection("items");
 
-    // First, get the item to check ownership and get image key
     const item = await itemsCollection.findOne({ _id: new ObjectId(id) });
 
     if (!item) {
+      debug.error("ITEM_DELETE", `Item not found: ${id}`);
       return res.status(404).json({ error: "Item not found" });
     }
 
-    // Check if user owns the item
     if (item.userId !== uid) {
+      debug.error(
+        "ITEM_DELETE",
+        `Unauthorized delete attempt by ${uid} for item owned by ${item.userId}`
+      );
       return res.status(403).json({
         error: "Forbidden",
         message: "You can only delete your own items",
       });
     }
 
-    // Delete the item from database
     const result = await itemsCollection.deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 0) {
+      debug.error("ITEM_DELETE", `Failed to delete item: ${id}`);
       return res.status(404).json({ error: "Item not found" });
     }
 
-    // Clean up image from S3
+    // Clean up S3 image
     if (item.photoKey) {
       try {
         await s3.send(
@@ -545,13 +606,14 @@ app.delete("/api/items/:id", authenticateUser, async (req, res) => {
             Key: item.photoKey,
           })
         );
-        console.log(`✅ Deleted image: ${item.photoKey}`);
+        debug.success("ITEM_DELETE", `Deleted S3 image: ${item.photoKey}`);
       } catch (s3Error) {
-        console.error("Error deleting image from S3:", s3Error);
-        // Don't fail the request if image deletion fails
+        debug.error("ITEM_DELETE", "Failed to delete S3 image");
+        debug.error("ITEM_DELETE", s3Error);
       }
     }
 
+    debug.success("ITEM_DELETE", `Item deleted successfully: ${id}`);
     res.status(200).json({
       message: "Item deleted successfully",
       deletedItem: {
@@ -560,7 +622,8 @@ app.delete("/api/items/:id", authenticateUser, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error deleting item:", error);
+    debug.error("ITEM_DELETE", "Failed to delete item");
+    debug.error("ITEM_DELETE", error);
     res.status(500).json({
       error: "Error deleting item",
       message: error.message,
@@ -568,95 +631,10 @@ app.delete("/api/items/:id", authenticateUser, async (req, res) => {
   }
 });
 
-// Update item status (mark as sold/unsold)
-app.patch("/api/items/:id/status", authenticateUser, async (req, res) => {
-  const { id } = req.params;
-  const { sold } = req.body;
-  const { uid } = req.user;
-
-  try {
-    const itemsCollection = mongoDB.collection("items");
-
-    // Check ownership
-    const item = await itemsCollection.findOne({ _id: new ObjectId(id) });
-    if (!item) {
-      return res.status(404).json({ error: "Item not found" });
-    }
-
-    if (item.userId !== uid) {
-      return res.status(403).json({
-        error: "Forbidden",
-        message: "You can only update your own items",
-      });
-    }
-
-    const result = await itemsCollection.updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          sold: Boolean(sold),
-          updatedAt: new Date(),
-        },
-      }
-    );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ error: "Item not found" });
-    }
-
-    res.status(200).json({
-      message: `Item marked as ${sold ? "sold" : "available"}`,
-      itemId: id,
-      sold: Boolean(sold),
-    });
-  } catch (error) {
-    console.error("Error updating item status:", error);
-    res.status(500).json({
-      error: "Error updating item status",
-      message: error.message,
-    });
-  }
-});
-
-// Get user's items
-app.get("/api/users/:uid/items", authenticateUser, async (req, res) => {
-  const { uid } = req.params;
-  const requestingUserUid = req.user.uid;
-
-  // Users can only see their own items
-  if (uid !== requestingUserUid) {
-    return res.status(403).json({
-      error: "Forbidden",
-      message: "You can only view your own items",
-    });
-  }
-
-  try {
-    const itemsCollection = mongoDB.collection("items");
-    const items = await itemsCollection
-      .find({ userId: uid })
-      .sort({ createdAt: -1 })
-      .toArray();
-
-    res.status(200).json({
-      items: items.map((item) => ({
-        ...item,
-        photo: item.photo || null,
-      })),
-      totalItems: items.length,
-    });
-  } catch (error) {
-    console.error("Error fetching user items:", error);
-    res.status(500).json({
-      error: "Error fetching user items",
-      message: error.message,
-    });
-  }
-});
-
-// Error handling middleware
+// 🔧 ERROR HANDLING MIDDLEWARE
 app.use((error, req, res, next) => {
-  console.error("Unhandled error:", error);
+  debug.error("MIDDLEWARE", "Unhandled error");
+  debug.error("MIDDLEWARE", error);
 
   if (error instanceof multer.MulterError) {
     if (error.code === "LIMIT_FILE_SIZE") {
@@ -682,26 +660,28 @@ app.use((error, req, res, next) => {
   });
 });
 
-// 404 handler
+// 🔧 404 HANDLER
 app.use("*", (req, res) => {
+  debug.error("404", `Route not found: ${req.method} ${req.originalUrl}`);
   res.status(404).json({
     error: "Route not found",
     message: `Cannot ${req.method} ${req.originalUrl}`,
   });
 });
 
-// Graceful shutdown
+// 🔧 GRACEFUL SHUTDOWN
 process.on("SIGINT", async () => {
-  console.log("\n🛑 Shutting down gracefully...");
+  debug.log("SHUTDOWN", "Shutting down gracefully...");
   try {
     await client.close();
-    console.log("✅ MongoDB connection closed");
+    debug.success("SHUTDOWN", "MongoDB connection closed");
     process.exit(0);
   } catch (error) {
-    console.error("❌ Error during shutdown:", error);
+    debug.error("SHUTDOWN", "Error during shutdown");
+    debug.error("SHUTDOWN", error);
     process.exit(1);
   }
 });
 
-// Start the server
+// 🔧 START THE SERVER
 connectToMongoDBAndStartServer();

@@ -1,72 +1,243 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { CheckCircle, XCircle, AlertCircle, Info, X } from "lucide-react";
 
-const Toast = ({ id, message, type, onClose }) => {
+const Toast = ({
+  id,
+  message,
+  type = "info",
+  onClose,
+  duration = 3000,
+  position = "top-right",
+}) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+  const [progress, setProgress] = useState(100);
+
+  // Auto-dismiss functionality
+  useEffect(() => {
+    // Show animation
+    const showTimer = setTimeout(() => setIsVisible(true), 10);
+
+    // Progress bar animation
+    const progressTimer = setInterval(() => {
+      setProgress((prev) => {
+        const newProgress = prev - 100 / (duration / 100);
+        return newProgress <= 0 ? 0 : newProgress;
+      });
+    }, 100);
+
+    // Auto-dismiss timer
+    const dismissTimer = setTimeout(() => {
+      handleClose();
+    }, duration);
+
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(dismissTimer);
+      clearInterval(progressTimer);
+    };
+  }, [duration]);
+
+  const handleClose = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onClose();
+    }, 300); // Match animation duration
+  };
+
+  // Icon configuration
   const icons = {
-    success: (
-      <svg
-        className="w-5 h-5"
-        aria-hidden="true"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="currentColor"
-        viewBox="0 0 20 20"
-      >
-        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
-      </svg>
-    ),
-    error: (
-      <svg
-        className="w-5 h-5"
-        aria-hidden="true"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="currentColor"
-        viewBox="0 0 20 20"
-      >
-        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 11.793a1 1 0 1 1-1.414 1.414L10 11.414l-2.293 2.293a1 1 0 0 1-1.414-1.414L8.586 10 6.293 7.707a1 1 0 0 1 1.414-1.414L10 8.586l2.293-2.293a1 1 0 0 1 1.414 1.414L11.414 10l2.293 2.293Z" />
-      </svg>
-    ),
+    success: <CheckCircle className="w-5 h-5" />,
+    error: <XCircle className="w-5 h-5" />,
+    warning: <AlertCircle className="w-5 h-5" />,
+    info: <Info className="w-5 h-5" />,
   };
 
-  const bgColors = {
-    success: "text-green-500 bg-green-100",
-    error: "text-red-500 bg-red-100",
+  // Color schemes
+  const colorSchemes = {
+    success: {
+      bg: "bg-white border-l-4 border-green-500",
+      icon: "text-green-500 bg-green-50",
+      text: "text-gray-800",
+      progress: "bg-green-500",
+    },
+    error: {
+      bg: "bg-white border-l-4 border-red-500",
+      icon: "text-red-500 bg-red-50",
+      text: "text-gray-800",
+      progress: "bg-red-500",
+    },
+    warning: {
+      bg: "bg-white border-l-4 border-yellow-500",
+      icon: "text-yellow-600 bg-yellow-50",
+      text: "text-gray-800",
+      progress: "bg-yellow-500",
+    },
+    info: {
+      bg: "bg-white border-l-4 border-blue-500",
+      icon: "text-blue-500 bg-blue-50",
+      text: "text-gray-800",
+      progress: "bg-blue-500",
+    },
   };
+
+  // Position classes
+  const positionClasses = {
+    "top-right": "top-4 right-4",
+    "top-left": "top-4 left-4",
+    "top-center": "top-4 left-1/2 transform -translate-x-1/2",
+    "bottom-right": "bottom-4 right-4",
+    "bottom-left": "bottom-4 left-4",
+    "bottom-center": "bottom-4 left-1/2 transform -translate-x-1/2",
+  };
+
+  // Animation classes
+  const getAnimationClasses = () => {
+    const baseClasses = "transition-all duration-300 ease-in-out";
+
+    if (isExiting) {
+      return `${baseClasses} opacity-0 transform scale-95 translate-x-full`;
+    }
+
+    if (isVisible) {
+      return `${baseClasses} opacity-100 transform scale-100 translate-x-0`;
+    }
+
+    return `${baseClasses} opacity-0 transform scale-95 translate-x-full`;
+  };
+
+  const scheme = colorSchemes[type] || colorSchemes.info;
 
   return (
     <div
       id={`toast-${id}`}
-      className={`flex items-center w-full max-w-xs p-4 mb-4 text-gray-500 bg-white rounded-lg shadow-sm`}
+      className={`
+        fixed z-50 flex flex-col w-full max-w-sm
+        ${positionClasses[position]}
+        ${getAnimationClasses()}
+      `}
       role="alert"
+      aria-live="polite"
     >
+      {/* Main Toast Content */}
       <div
-        className={`inline-flex items-center justify-center shrink-0 w-8 h-8 rounded-lg ${bgColors[type]}`}
+        className={`
+        ${scheme.bg} 
+        rounded-lg shadow-lg backdrop-blur-sm
+        overflow-hidden
+      `}
       >
-        {icons[type]}
-      </div>
-      <div className="ms-3 text-sm font-normal">{message}</div>
-      <button
-        type="button"
-        className="ms-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8"
-        onClick={onClose}
-        aria-label="Close"
-      >
-        <svg
-          className="w-3 h-3"
-          aria-hidden="true"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 14 14"
-        >
-          <path
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
+        <div className="flex items-start p-4">
+          {/* Icon */}
+          <div
+            className={`
+            inline-flex items-center justify-center shrink-0 w-10 h-10 rounded-lg mr-3
+            ${scheme.icon}
+          `}
+          >
+            {icons[type]}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div
+              className={`text-sm font-medium ${scheme.text} leading-relaxed`}
+            >
+              {message}
+            </div>
+          </div>
+
+          {/* Close Button */}
+          <button
+            type="button"
+            onClick={handleClose}
+            className="ml-3 inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            aria-label="Close notification"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="h-1 bg-gray-200">
+          <div
+            className={`h-full ${scheme.progress} transition-all duration-100 ease-linear`}
+            style={{ width: `${progress}%` }}
           />
-        </svg>
-      </button>
+        </div>
+      </div>
     </div>
   );
+};
+
+// Toast Container Component for managing multiple toasts
+export const ToastContainer = ({ toasts, onClose }) => {
+  return (
+    <div className="fixed inset-0 pointer-events-none z-50">
+      {toasts.map((toast, index) => (
+        <div
+          key={toast.id}
+          className="pointer-events-auto"
+          style={{
+            transform: `translateY(${index * 80}px)`, // Stack toasts
+          }}
+        >
+          <Toast {...toast} onClose={() => onClose(toast.id)} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// Hook for using toasts
+export const useToast = () => {
+  const [toasts, setToasts] = useState([]);
+
+  const showToast = (message, type = "info", options = {}) => {
+    const id = Date.now() + Math.random();
+    const newToast = {
+      id,
+      message,
+      type,
+      duration: options.duration || 3000,
+      position: options.position || "top-right",
+      ...options,
+    };
+
+    setToasts((prev) => [...prev, newToast]);
+
+    // Auto-remove after duration + animation
+    setTimeout(() => {
+      removeToast(id);
+    }, newToast.duration + 300);
+  };
+
+  const removeToast = (id) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  };
+
+  const removeAllToasts = () => {
+    setToasts([]);
+  };
+
+  // Convenience methods
+  const showSuccess = (message, options) =>
+    showToast(message, "success", options);
+  const showError = (message, options) => showToast(message, "error", options);
+  const showWarning = (message, options) =>
+    showToast(message, "warning", options);
+  const showInfo = (message, options) => showToast(message, "info", options);
+
+  return {
+    toasts,
+    showToast,
+    showSuccess,
+    showError,
+    showWarning,
+    showInfo,
+    removeToast,
+    removeAllToasts,
+  };
 };
 
 export default Toast;
