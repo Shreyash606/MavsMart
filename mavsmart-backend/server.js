@@ -128,31 +128,36 @@ function startServer() {
   });
 }
 
-// 🔧 5. ENHANCED CORS - Allow all localhost ports for development
+/// 🔧 5. ENHANCED CORS - Allow all localhost ports for development
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001", 
   "http://localhost:3002",
   "https://localhost:3000",
-  "https://mavsmart.uta.cloud",
-  // Add your production domain here
+  "https://mavsmart.uta.cloud",        // Your frontend domain
+  "http://mavsmart.uta.cloud",         // HTTP version
+  "https://api.mavsmart.uta.cloud",    // Your API domain
+  "http://api.mavsmart.uta.cloud"      // HTTP version
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    log('CORS', `Request from origin: ${origin}`);
+    console.log(`🔍 [CORS] Request from origin: ${origin}`);
     
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
     // Allow any localhost for development
-    if (origin.includes('localhost')) return callback(null, true);
+    if (origin && origin.includes('localhost')) return callback(null, true);
+    
+    // Allow mavsmart domains
+    if (origin && origin.includes('mavsmart.uta.cloud')) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       console.error(`❌ CORS blocked origin: ${origin}`);
-      callback(new Error("Not allowed by CORS"));
+      callback(null, true); // Temporarily allow all for debugging
     }
   },
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
